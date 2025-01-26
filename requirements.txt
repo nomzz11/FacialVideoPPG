@@ -1,0 +1,11 @@
+matplotlib==3.10.0
+numpy==1.24.4
+opencv_python==4.10.0.84
+pandas==2.2.3
+Pillow==11.1.0
+python-dotenv==1.0.1
+Requests==2.32.3
+scikit_learn==1.6.1
+seaborn==0.13.2
+torch==2.5.1
+torchvision==0.20.1
