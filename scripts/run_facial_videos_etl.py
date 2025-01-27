@@ -13,9 +13,12 @@ from src.lib.etl_data import (
     load_physiological_records,
 )
 
+from scripts.utils import get_cli_options
+
 base_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(base_dir, "../data")
 output_dir = os.path.join(base_dir, "../refined_data")
+
 
 ETL_data(
     data_dir,
@@ -26,4 +29,5 @@ ETL_data(
     extract_physiological_records,
     transform_physiological_records,
     load_physiological_records,
+    get_cli_options(),
 )
