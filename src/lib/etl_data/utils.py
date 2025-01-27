@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def find_closest_ppg(frame_timestamps, ppg_timestamps, ppg_values):
     frame_timestamps = np.array(frame_timestamps)
     ppg_timestamps = np.array(ppg_timestamps)
