@@ -10,6 +10,7 @@ def ETL_data(
     extract_records,
     transform_records,
     load_records,
+    options,
 ):
     if not os.path.isdir(data_dir):
         raise ValueError(f"Le chemin spécifié n'est pas un dossier : {data_dir}")
@@ -23,10 +24,15 @@ def ETL_data(
             elif file.endswith(".json"):
                 files_by_type["physiological_records"].append(file_path)
 
-    extract_videos(files_by_type["videos"], output_dir, transform_videos, load_frames)
-    extract_records(
-        files_by_type["physiological_records"],
-        output_dir,
-        transform_records,
-        load_records,
-    )
+    if "frames" in options or len(options) == 0:
+        extract_videos(
+            files_by_type["videos"], output_dir, transform_videos, load_frames
+        )
+
+    if "records" in options or len(options) == 0:
+        extract_records(
+            files_by_type["physiological_records"],
+            output_dir,
+            transform_records,
+            load_records,
+        )
