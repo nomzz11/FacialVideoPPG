@@ -36,3 +36,12 @@ def ETL_data(
             transform_records,
             load_records,
         )
+
+    if ".mp4" in options[0]:
+        file_path = os.path.join(data_dir, options[0])
+        extract_videos(
+            [x for x in files_by_type["videos"] if x == file_path],
+            output_dir,
+            transform_videos,
+            load_frames,
+        )
