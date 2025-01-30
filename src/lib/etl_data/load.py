@@ -15,5 +15,6 @@ def load_physiological_records(records, records_name, output_records_dir):
         output_records_dir, records_name, "physiological_record.csv"
     )
     df = pd.DataFrame(records)
+    df = df.iloc[:-1]
     df.to_csv(output_records_path, index=False)
     print(records_name, os.path.basename(output_records_dir))
