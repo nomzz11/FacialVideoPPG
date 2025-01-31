@@ -16,5 +16,10 @@ def load_physiological_records(records, records_name, output_records_dir):
     )
     df = pd.DataFrame(records)
     df = df.iloc[:-1]
+
+    output_dir = os.path.join(output_records_dir, records_name)
+    if not os.path.exists(output_dir):
+        print(f"Le chemin {output_dir} n'existe pas. Opération annulée.")
+        return
     df.to_csv(output_records_path, index=False)
     print(records_name, os.path.basename(output_records_dir))
