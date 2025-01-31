@@ -11,6 +11,9 @@ if __name__ == "__main__":
 
     dataset = FacialVideoDataset
     train_dataset, val_dataset, test_dataset = split_dataset(dataset)
+    train_dataloader, val_dataloader, test_dataloader = dataloader(
+        train_dataset, val_dataset, test_dataset
+    )
 
     print(f"Train dataset size: {len(train_dataset)}")
     print(f"Validation dataset size: {len(val_dataset)}")
