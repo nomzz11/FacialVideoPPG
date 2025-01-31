@@ -1,14 +1,9 @@
-import os
-import pandas as pd
-import numpy as np
+import os, pandas as pd
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
-from torchvision import transforms
 from PIL import Image
 
 
-# TODO : create lib for training
-# TODO : moov class out of script
 class FacialVideoDataset(Dataset):
     def __init__(
         self,
@@ -112,28 +107,3 @@ class FacialVideoDataset(Dataset):
             image = self.transform(image)
 
         return image, ppg_value
-
-
-if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, "../refined_data")
-    transform = transforms.Compose(
-        [
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ]
-    )
-
-    train_dataset = FacialVideoDataset(
-        data_dir, split="train", split_strategy="video_length", transform=transform
-    )
-    val_dataset = FacialVideoDataset(
-        data_dir, split="val", split_strategy="video_length", transform=transform
-    )
-    test_dataset = FacialVideoDataset(
-        data_dir, split="test", split_strategy="video_length", transform=transform
-    )
-
-    print(f"Train dataset size: {len(train_dataset)}")
-    print(f"Validation dataset size: {len(val_dataset)}")
-    print(f"Test dataset size: {len(test_dataset)}")
