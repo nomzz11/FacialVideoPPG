@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     config = {
         "job_id": job_id,
-        "model": "ResNetPPG",
+        "model": "ResNet50",
         "epochs": cli_options["epochs"],
         "learning_rate": cli_options["lr"],
         "weight_decay": cli_options["weight_decay"],
