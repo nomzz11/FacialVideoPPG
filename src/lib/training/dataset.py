@@ -9,10 +9,15 @@ class FacialVideoDataset(Dataset):
         self,
         data_dir,
         split="train",
-        split_strategy="video_length",
+        split_strategy=None,
         transform=None,
         seed=42,
     ):
+        if split_strategy not in ["video_length", "video_count"]:
+            raise ValueError(
+                "split_strategy must be specified as 'video_length' or 'video_count'."
+            )
+
         self.data_dir = data_dir
         self.split = split
         self.split_strategy = split_strategy
@@ -41,12 +46,11 @@ class FacialVideoDataset(Dataset):
                 csv_path = os.path.join(video_path, "physiological_record.csv")
                 if os.path.exists(csv_path):
                     df = pd.read_csv(csv_path)
-                    df["video_folder"] = video_folder
                     metadata.append(df)
         return pd.concat(metadata, ignore_index=True)
 
     def _split_by_video_length(self):
-        grouped = self.metadata.groupby("video_folder")
+        grouped = self.metadata.groupby("video_name")
         train_data, val_data, test_data = [], [], []
 
         for _, group in grouped:
@@ -76,7 +80,7 @@ class FacialVideoDataset(Dataset):
             return pd.concat(test_data, ignore_index=True)
 
     def _split_by_video_count(self):
-        video_folders = self.metadata["video_folder"].unique()
+        video_folders = self.metadata["video_name"].unique()
         train_videos, temp_videos = train_test_split(
             video_folders, test_size=0.3, random_state=self.seed
         )
@@ -85,18 +89,18 @@ class FacialVideoDataset(Dataset):
         )
 
         if self.split == "train":
-            return self.metadata[self.metadata["video_folder"].isin(train_videos)]
+            return self.metadata[self.metadata["video_name"].isin(train_videos)]
         elif self.split == "val":
-            return self.metadata[self.metadata["video_folder"].isin(val_videos)]
+            return self.metadata[self.metadata["video_name"].isin(val_videos)]
         elif self.split == "test":
-            return self.metadata[self.metadata["video_folder"].isin(test_videos)]
+            return self.metadata[self.metadata["video_name"].isin(test_videos)]
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, id):
         row = self.data.iloc[id]
-        video_folder = row["video_folder"]
+        video_folder = row["video_name"]
         frame_name = f"{row['frame_name']:04d}.jpg"
         frame_path = os.path.join(self.data_dir, video_folder, frame_name)
         ppg_value = row["ppg_value"]
