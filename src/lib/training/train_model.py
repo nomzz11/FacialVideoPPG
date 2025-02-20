@@ -1,6 +1,6 @@
 import os, torch, json
 from sklearn.metrics import mean_absolute_error, r2_score
-from src.lib.training import validate_model
+from src.lib.training.validate_model import validate_model
 
 
 def train_model(
@@ -13,7 +13,7 @@ def train_model(
     epochs=10,
     device="cuda",
 ):
-
+    job_id = os.path.basename(save_dir)
     best_val_loss = float("inf")
     training_log = []
 
@@ -69,10 +69,10 @@ def train_model(
         # Save the model if the validation is better
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), os.path.join(job_path, "best_model.pth"))
+            torch.save(model.state_dict(), os.path.join(save_dir, "best_model.pth"))
 
     # Saving training logs
-    log_path = os.path.join(job_path, "training_log.json")
+    log_path = os.path.join(save_dir, "training_log.json")
     with open(log_path, "w") as f:
         json.dump(training_log, f, indent=4)
 
