@@ -18,7 +18,7 @@ def train_model(
     training_log = []
 
     device = torch.device(device if torch.cuda.is_available() else "cpu")
-    print("Begin training...")
+    print("Begin training... with : ", device)
 
     for epoch in range(epochs):
         model.train().to(device)
