@@ -9,15 +9,10 @@ def train_model(
     val_dataloader,
     criterion,
     optimizer,
-    save_dir="experiments",
+    save_dir,
     epochs=10,
     device="cuda",
 ):
-    os.makedirs(save_dir, exist_ok=True)
-    existing_jobs = [d for d in os.listdir(save_dir) if d.isdigit()]
-    job_id = f"{len(existing_jobs):04d}"
-    job_path = os.path.join(save_dir, job_id)
-    os.makedirs(job_path, exist_ok=True)
 
     best_val_loss = float("inf")
     training_log = []
@@ -33,7 +28,7 @@ def train_model(
         # Training Loop
         for frames, ppg_signal in train_dataloader:
 
-            frames, ppg_signal = frames.cuda(), ppg_signal.cuda()
+            frames, ppg_signal = frames.to(device), ppg_signal.to(device)
             optimizer.zero_grad()
             predictions = model(frames)
             loss = criterion(predictions, ppg_signal)
