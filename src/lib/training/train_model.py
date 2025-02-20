@@ -28,7 +28,7 @@ def train_model(
         # Training Loop
         for frames, ppg_signal in train_dataloader:
 
-            frames, ppg_signal = frames.to(device), ppg_signal.to(device)
+            frames, ppg_signal = frames.to(device), ppg_signal.to(device).float()
             optimizer.zero_grad()
             predictions = model(frames)
             loss = criterion(predictions, ppg_signal)
