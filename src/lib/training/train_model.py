@@ -36,8 +36,9 @@ def train_model(
             optimizer.step()
             train_loss += loss.item()
 
-            train_preds.extend(predictions.cpu().numpy().flatten())
-            train_targets.extend(ppg_signal.cpu().numpy().flatten())
+            with torch.no_grad():
+                train_preds.extend(predictions.cpu().numpy().flatten())
+                train_targets.extend(ppg_signal.cpu().numpy().flatten())
 
         train_mae = mean_absolute_error(train_targets, train_preds)
         train_r2 = r2_score(train_targets, train_preds)
