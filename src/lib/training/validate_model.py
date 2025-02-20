@@ -12,7 +12,7 @@ def validate_model(model, val_dataloader, criterion, device):
         for frames, ppg_values in val_dataloader:
 
             frames, ppg_values = frames.to(device), ppg_values.to(device).float()
-            outputs = model(frames)
+            outputs = model(frames).squeeze()
             loss = criterion(outputs, ppg_values)
             val_loss += loss.item()
 

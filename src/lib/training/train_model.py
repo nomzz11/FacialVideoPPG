@@ -30,7 +30,7 @@ def train_model(
 
             frames, ppg_signal = frames.to(device), ppg_signal.to(device).float()
             optimizer.zero_grad()
-            predictions = model(frames)
+            predictions = model(frames).squeeze()
             loss = criterion(predictions, ppg_signal)
             loss.backward()
             optimizer.step()
