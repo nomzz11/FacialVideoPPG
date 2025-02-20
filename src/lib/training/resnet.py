@@ -9,9 +9,4 @@ class ResNetPPG(nn.Module):
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, 1)
 
     def forward(self, x):
-        batch_size, time_steps, c, h, w = x.size()
-        x_resnet = x.view(batch_size * time_steps, c, h, w)
-        x_resnet = self.resnet(x_resnet)
-        x_resnet = x_resnet.view(batch_size, time_steps, 1)
-
-        return x_resnet
+        return self.resnet(x)
