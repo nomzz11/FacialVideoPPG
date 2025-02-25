@@ -1,4 +1,4 @@
-import os, pandas as pd
+import os, pandas as pd, numpy as np, cv2
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 from PIL import Image
@@ -26,6 +26,11 @@ class FacialVideoDataset(Dataset):
 
         # Load metadata from CSV files
         self.metadata = self._load_metadata()
+
+        # Load OpenCV face detector
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
 
         # Perform splitting based on the selected strategy
         if split_strategy == "video_length":
@@ -95,6 +100,23 @@ class FacialVideoDataset(Dataset):
         elif self.split == "test":
             return self.metadata[self.metadata["video_name"].isin(test_videos)]
 
+    def detect_face(self, image):
+        image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
+
+        faces = self.face_cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=10, minSize=(100, 100)
+        )
+
+        if len(faces) > 0:
+            x, y, w, h = sorted(
+                faces, key=lambda rect: rect[2] * rect[3], reverse=True
+            )[0]
+            face_crop = image_cv[y : y + h, x : x + w]
+            return Image.fromarray(cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB))
+
+        return image
+
     def __len__(self):
         return len(self.data)
 
@@ -106,6 +128,8 @@ class FacialVideoDataset(Dataset):
         ppg_value = row["ppg_value"]
 
         image = Image.open(frame_path).convert("RGB")
+
+        image = self.detect_face(image)
 
         if self.transform:
             image = self.transform(image)
