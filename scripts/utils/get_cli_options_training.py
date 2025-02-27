@@ -26,6 +26,7 @@ def get_cli_options_training():
         default="video_length",
         help="Data split strategy",
     )
+    parser.add_argument("--batch_size", type=int, default=64, help="Taille du batch")
 
     args = parser.parse_args()
     return vars(args)

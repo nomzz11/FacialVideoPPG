@@ -48,7 +48,7 @@ if __name__ == "__main__":
         dataset, split_strategy=cli_options["split_strategy"], use_lstm=use_lstm
     )
     train_dataloader, val_dataloader, test_dataloader = dataloader(
-        train_dataset, val_dataset, test_dataset
+        train_dataset, val_dataset, test_dataset, cli_options["batch_size"]
     )
 
     criterion = nn.MSELoss()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     config = {
         "job_id": job_id,
-        "model": "ResNet50",
+        "model": cli_options["model"],
         "epochs": cli_options["epochs"],
         "learning_rate": cli_options["lr"],
         "weight_decay": cli_options["weight_decay"],
