@@ -5,7 +5,13 @@ def get_cli_options_training():
     parser = argparse.ArgumentParser(
         description="Train a ResNet model with different hyperparameters."
     )
-
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["resnet", "resnet_lstm"],
+        default="resnet",
+        help="Model for training",
+    )
     parser.add_argument(
         "--lr", type=float, default=0.001, help="Learning rate for training"
     )

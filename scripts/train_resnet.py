@@ -13,6 +13,7 @@ from src.lib.training import (
     split_dataset,
     dataloader,
     ResNetPPG,
+    ResNetLSTM,
     train_model,
 )
 
@@ -27,6 +28,16 @@ if __name__ == "__main__":
 
     cli_options = get_cli_options_training()
 
+    if cli_options["model"] not in ["resnet", "resnet_lstm"]:
+        raise ValueError("model must be specified as 'resnet' or 'resnet_lstm'.")
+
+    if cli_options["model"] == "resnet":
+        use_lstm = False
+        model = ResNetPPG()
+    elif cli_options["model"] == "resnet_lstm":
+        use_lstm = True
+        model = ResNetLSTM()
+
     job_id = get_next_job_id()
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     save_path = os.path.join(project_root, "experiments", job_id)
@@ -34,13 +45,11 @@ if __name__ == "__main__":
 
     dataset = FacialVideoDataset
     train_dataset, val_dataset, test_dataset = split_dataset(
-        dataset, split_strategy=cli_options["split_strategy"]
+        dataset, split_strategy=cli_options["split_strategy"], use_lstm=use_lstm
     )
     train_dataloader, val_dataloader, test_dataloader = dataloader(
         train_dataset, val_dataset, test_dataset
     )
-
-    model = ResNetPPG()
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(
