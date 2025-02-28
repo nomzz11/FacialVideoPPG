@@ -7,7 +7,7 @@ class ResNetLSTM(nn.Module):
     def __init__(self, hidden_size=128, num_layers=2, sequence_length=30):
         super(ResNetLSTM, self).__init__()
 
-        self.resnet = models.resnet101(pretrained=True)
+        self.resnet = models.resnet50(pretrained=True)
 
         for param in self.resnet.parameters():
             param.requires_grad = False
