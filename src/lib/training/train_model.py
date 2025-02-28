@@ -10,12 +10,16 @@ def train_model(
     criterion,
     optimizer,
     save_dir,
+    gpu=0,
     epochs=10,
-    device="cuda",
+    device="cuda:0",
 ):
     job_id = os.path.basename(save_dir)
     best_val_loss = float("inf")
     training_log = []
+
+    if gpu == 1:
+        device = "cuda:1"
 
     device = torch.device(device if torch.cuda.is_available() else "cpu")
     print("Begin training... with : ", device)
