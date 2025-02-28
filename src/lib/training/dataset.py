@@ -167,8 +167,8 @@ class FacialVideoDataset(Dataset):
 
             frames = torch.stack(frames)  # Shape: (seq_len, C, H, W)
             ppg_values = torch.tensor(
-                ppg_values[-1], dtype=torch.float32
-            )  # Dernière valeur de la séquence
+                ppg_values, dtype=torch.float32
+            )  # Shape: (seq_len,)
 
             return frames, ppg_values
 

@@ -84,4 +84,5 @@ if __name__ == "__main__":
         optimizer,
         save_path,
         epochs=cli_options["epochs"],
+        gpu=cli_options["gpu"],
     )

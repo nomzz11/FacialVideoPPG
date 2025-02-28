@@ -7,7 +7,7 @@ class ResNetLSTM(nn.Module):
     def __init__(self, hidden_size=128, num_layers=2, sequence_length=30):
         super(ResNetLSTM, self).__init__()
 
-        self.resnet = models.resnet101(pretrained=True)
+        self.resnet = models.resnet50(pretrained=True)
 
         for param in self.resnet.parameters():
             param.requires_grad = False
@@ -32,8 +32,8 @@ class ResNetLSTM(nn.Module):
         features = self.resnet(x)  # (batch_size * seq_len, feature_size)
         features = features.view(batch_size, seq_len, -1)
 
-        last_out, _ = self.lstm(features)
+        lstm_out, _ = self.lstm(features)
 
-        last_out = self.fc(last_out[:, -1, :])
+        output = self.fc(lstm_out)
 
-        return last_out
+        return output.squeeze(-1)
