@@ -32,8 +32,8 @@ class ResNetLSTM(nn.Module):
         features = self.resnet(x)  # (batch_size * seq_len, feature_size)
         features = features.view(batch_size, seq_len, -1)
 
-        last_out, _ = self.lstm(features)
+        lstm_out, _ = self.lstm(features)
 
-        last_out = self.fc(last_out[:, -1, :])
+        output = self.fc(lstm_out)
 
-        return last_out
+        return output.squeeze(-1)
