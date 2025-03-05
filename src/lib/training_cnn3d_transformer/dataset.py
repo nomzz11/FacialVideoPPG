@@ -162,9 +162,7 @@ class FacialVideoDataset(Dataset):
             ppg_values.append(ppg_value)
 
         frames = torch.stack(frames)  # Shape: (seq_len, C, H, W) -> 4D tensor
-        frames = frames.unsqueeze(
-            0
-        )  # Adding time dimension -> Shape: (1, seq_len, C, H, W)
+        frames = frames.permute(1, 0, 2, 3)  # Shape: (C, seq_len, H, W)
         ppg_values = torch.tensor(ppg_values, dtype=torch.float32)  # Shape: (seq_len,)
 
         return frames, ppg_values
