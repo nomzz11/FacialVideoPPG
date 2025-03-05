@@ -10,6 +10,8 @@ class r3d_transformer(nn.Module):
         # Load pre-trained ResNet3D-18 model on videos to extract features
         self.backbone = r3d_18(pretrained=True)
 
+        self.feature_adapter = nn.Linear(400, 512)
+
         # Transformer to capture temporal relationships
         self.transformer = Transformer(d_model=512, nhead=8, num_encoder_layers=6)
 
@@ -18,7 +20,7 @@ class r3d_transformer(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)
-        x = self.fc_backbone(x)
+        x = self.feature_adapter(x)
         src, tgt = x, x
         x = self.transformer(src, tgt)
         x = self.fc(x)
