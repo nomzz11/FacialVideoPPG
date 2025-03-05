@@ -18,6 +18,7 @@ class r3d_transformer(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)
+        x = self.fc_backbone(x)
         src, tgt = x, x
         x = self.transformer(src, tgt)
         x = self.fc(x)
