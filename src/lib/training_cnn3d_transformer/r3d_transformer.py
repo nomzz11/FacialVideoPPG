@@ -13,7 +13,7 @@ class r3d_transformer(nn.Module):
         for param in self.backbone.parameters():
             param.requires_grad = False
 
-        self.feature_adapter = nn.Linear(400, 512)
+        self.backbone.fc = nn.Identity()
 
         # Transformer to capture temporal relationships
         self.transformer = Transformer(d_model=512, nhead=8, num_encoder_layers=6)
