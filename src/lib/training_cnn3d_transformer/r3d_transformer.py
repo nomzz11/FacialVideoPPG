@@ -19,7 +19,7 @@ class r3d_transformer(nn.Module):
         self.transformer = Transformer(d_model=512, nhead=8, num_encoder_layers=6)
 
         # FC layer to predict final PPG value
-        self.fc = nn.Linear(512, 90)
+        self.fc = nn.Linear(512, 1)
 
     def forward(self, x):
         x = self.backbone(x)
@@ -27,4 +27,5 @@ class r3d_transformer(nn.Module):
         src, tgt = x, x
         x = self.transformer(src, tgt)
         x = self.fc(x)
+        x = x.squeeze(-1)
         return x
