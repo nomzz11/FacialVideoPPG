@@ -5,7 +5,7 @@ from torch.nn import Transformer
 
 
 class SpatialAttention(nn.Module):
-    def __init__(self, kernel_size=7):
+    def __init__(self, kernel_size=3):
         super(SpatialAttention, self).__init__()
         # Convolution sur la concaténation des deux cartes attention (max et moyenne)
         self.conv1 = nn.Conv3d(2, 1, kernel_size=kernel_size, padding=kernel_size // 2)
@@ -39,7 +39,7 @@ class r3d_transformer(nn.Module):
         self.backbone.fc = nn.Identity()
 
         # Ajouter l'attention spatiale
-        self.spatial_attention = SpatialAttention(kernel_size=7)
+        self.spatial_attention = SpatialAttention(kernel_size=3)
 
         # FC layer to predict final PPG value
         self.fc = nn.Linear(512, 1)
