@@ -11,7 +11,7 @@ class FacialVideoDataset(Dataset):
         split="train",
         split_strategy=None,
         transform=None,
-        sequence_length=90,
+        sequence_length=3,
         use_lstm=False,
         seed=42,
     ):
@@ -111,7 +111,6 @@ class FacialVideoDataset(Dataset):
             return self.metadata[self.metadata["video_name"].isin(test_videos)]
 
     def _generate_samples(self):
-        """Generate indices based on mode (ResNet alone or LSTM)"""
         sequences = []
         for video_name, group in self.grouped_data:
             frames = group.sort_values("frame_name")
