@@ -44,11 +44,8 @@ class CBAM3D(nn.Module):
         self.sa = SpatialAttention()
 
     def forward(self, x):
-        print(f"Avant CBAM: {x.shape}")
         x = self.ca(x)
-        print(f"Entre canal et spatial CBAM: {x.shape}")
         x = self.sa(x)
-        print(f"Après CBAM: {x.shape}")
         return x
 
 
