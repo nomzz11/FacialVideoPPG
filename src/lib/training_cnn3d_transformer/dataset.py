@@ -41,6 +41,7 @@ class FacialVideoDataset(Dataset):
             self.data = self._split_by_video_length()
         elif split_strategy == "video_count":
             self.data = self._split_by_video_count()
+            print(f"[{self.split}] Nombre total de frames après split:", len(self.data))
         else:
             raise ValueError(
                 "Invalid split_strategy. Use 'video_length' or 'video_count'."
@@ -95,7 +96,9 @@ class FacialVideoDataset(Dataset):
             return pd.concat(test_data, ignore_index=True)
 
     def _split_by_video_count(self):
+        print(self.metadata["video_name"].value_counts())
         video_folders = self.metadata["video_name"].unique()
+        print(len(video_folders))
         train_videos, temp_videos = train_test_split(
             video_folders, test_size=0.3, random_state=self.seed
         )
@@ -104,11 +107,17 @@ class FacialVideoDataset(Dataset):
         )
 
         if self.split == "train":
-            return self.metadata[self.metadata["video_name"].isin(train_videos)]
+            return self.metadata[
+                self.metadata["video_name"].isin(train_videos).reset_index(drop=True)
+            ]
         elif self.split == "val":
-            return self.metadata[self.metadata["video_name"].isin(val_videos)]
+            return self.metadata[
+                self.metadata["video_name"].isin(val_videos).reset_index(drop=True)
+            ]
         elif self.split == "test":
-            return self.metadata[self.metadata["video_name"].isin(test_videos)]
+            return self.metadata[
+                self.metadata["video_name"].isin(test_videos).reset_index(drop=True)
+            ]
 
     def _generate_samples(self):
         sequences = []
