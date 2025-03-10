@@ -1,6 +1,7 @@
 import os, torch, json
 from sklearn.metrics import mean_absolute_error, r2_score
 from src.lib.training.validate_model import validate_model
+from src.lib.training.plot_ppg_signal import plotPpgSignal
 
 
 def train_model(
@@ -74,6 +75,9 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model.state_dict(), os.path.join(save_dir, "best_model.pth"))
+
+    plots_dir = os.path.join(save_dir, "plots")
+    plotPpgSignal(plots_dir, train_targets, train_preds)
 
     # Saving training logs
     log_path = os.path.join(save_dir, "training_log.json")
