@@ -20,7 +20,14 @@ from src.lib.training_cnn3d_transformer import (
 def get_next_job_id(save_dir="experiments"):
     os.makedirs(save_dir, exist_ok=True)
     existing_jobs = sorted([d for d in os.listdir(save_dir) if d.isdigit()])
-    return f"{int(existing_jobs[-1]) + 1:04d}" if existing_jobs else "0000"
+    if existing_jobs:
+        last_job_id = existing_jobs[-1]
+        last_job_path = os.path.join(save_dir, last_job_id)
+        if not os.listdir(last_job_path):
+            return last_job_id
+
+        return f"{int(existing_jobs[-1]) + 1:04d}"
+    return "0000"
 
 
 if __name__ == "__main__":
@@ -49,6 +56,17 @@ if __name__ == "__main__":
         weight_decay=cli_options["weight_decay"],
     )
 
+    train_model(
+        model,
+        train_dataloader,
+        val_dataloader,
+        criterion,
+        optimizer,
+        save_path,
+        epochs=cli_options["epochs"],
+        gpu=cli_options["gpu"],
+    )
+
     config = {
         "job_id": job_id,
         "model": cli_options["model"],
@@ -66,14 +84,3 @@ if __name__ == "__main__":
         json.dump(config, f, indent=4)
 
     print(f"Configuration sauvegardée dans {config_path}")
-
-    train_model(
-        model,
-        train_dataloader,
-        val_dataloader,
-        criterion,
-        optimizer,
-        save_path,
-        epochs=cli_options["epochs"],
-        gpu=cli_options["gpu"],
-    )
