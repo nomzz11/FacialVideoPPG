@@ -76,8 +76,9 @@ def train_model(
             best_val_loss = val_loss
             torch.save(model.state_dict(), os.path.join(save_dir, "best_model.pth"))
 
-    plots_dir = os.path.join(save_dir, "plots")
-    plotPpgSignal(plots_dir, train_targets, train_preds)
+    plots_path = os.path.join(save_dir, "plots")
+    os.makedirs(plots_path, exist_ok=True)
+    plotPpgSignal(plots_path, train_targets, train_preds)
 
     # Saving training logs
     log_path = os.path.join(save_dir, "training_log.json")
