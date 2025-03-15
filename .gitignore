@@ -2,5 +2,4 @@
 __pycache__
 data
 refined_data
-experiments/*/*.pth
-experiments/*/*.json
+experiments
