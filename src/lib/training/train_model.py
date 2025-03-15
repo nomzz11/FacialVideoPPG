@@ -2,6 +2,7 @@ import os, torch, json
 from sklearn.metrics import mean_absolute_error, r2_score
 from src.lib.training.validate_model import validate_model
 from src.lib.training.plot_ppg_signal import plotPpgSignal
+from src.lib.ppg_processing.filtered_ppg import bandpass_filter
 
 
 def train_model(
@@ -78,7 +79,8 @@ def train_model(
 
     plots_path = os.path.join(save_dir, "plots")
     os.makedirs(plots_path, exist_ok=True)
-    plotPpgSignal(plots_path, train_targets, train_preds)
+    filtered_ppg = bandpass_filter(train_preds, fs=30)
+    plotPpgSignal(plots_path, train_targets, train_preds, filtered_ppg)
 
     # Saving training logs
     log_path = os.path.join(save_dir, "training_log.json")
