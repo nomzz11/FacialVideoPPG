@@ -14,6 +14,7 @@ from src.lib.training_cnn3d_transformer import (
     split_dataset,
     dataloader,
     r3d_transformer,
+    PearsonLoss,
 )
 
 
@@ -49,7 +50,19 @@ if __name__ == "__main__":
         train_dataset, val_dataset, test_dataset, cli_options["batch_size"]
     )
 
-    criterion = nn.MSELoss()
+    mse_loss = nn.MSELoss()
+    pearson_loss = PearsonLoss()
+
+    alpha = 0.5  # Poids pour la MSE
+    beta = 0.5  # Poids pour la Pearson Loss
+
+    def combined_loss(pred, target):
+        loss_mse = mse_loss(pred, target)
+        loss_pearson = pearson_loss(pred, target)
+        return alpha * loss_mse + beta * loss_pearson
+
+    criterion = combined_loss
+
     optimizer = optim.Adam(
         model.parameters(),
         lr=cli_options["lr"],
