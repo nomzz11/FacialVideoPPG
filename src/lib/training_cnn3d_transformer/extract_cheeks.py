@@ -57,6 +57,8 @@ def extract_cheeks(frame_pil, output_size=112):
     cheek_right = frame[y1_r:y2_r, x1_r:x2_r]
 
     if cheek_left.size == 0 or cheek_right.size == 0:
+        # Vérifier si les joues sont extraites
+        print(f"left_cheek: {cheek_left}, right_cheek: {cheek_right}")
         print("Problème d'extraction des joues (taille 0).")
         return None
 
@@ -66,5 +68,7 @@ def extract_cheeks(frame_pil, output_size=112):
 
     # Fusionner les joues pour obtenir une image carrée
     combined_cheeks = np.hstack((cheek_left_resized, cheek_right_resized))
+
+    print("okay")
 
     return combined_cheeks
