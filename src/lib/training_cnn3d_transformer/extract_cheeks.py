@@ -10,7 +10,7 @@ mtcnn = MTCNN(
 )
 
 
-def extract_cheeks_square(frame_pil, output_size=112):
+def extract_cheeks(frame_pil, output_size=112):
     """
     Détecte les joues dans une image et les renvoie sous forme d'une image carrée fusionnée.
 
