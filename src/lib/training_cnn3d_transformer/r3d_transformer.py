@@ -46,25 +46,46 @@ class CBAM3D(nn.Module):
     def forward(self, x):
         x = self.ca(x)
         x = self.sa(x)
-        return x
+        attention_map = torch.mean(x, dim=1, keepdim=True)
+        return x, attention_map
 
 
 class r3d_transformer(nn.Module):
     def __init__(self):
         super(r3d_transformer, self).__init__()
-        # Load pre-trained ResNet3D-18 model on videos to extract features
         self.backbone = r3d_18(pretrained=True)
 
-        self.backbone.layer1 = nn.Sequential(self.backbone.layer1, CBAM3D(64))
+        # Ajout du CBAM3D aux couches ResNet3D
+        self.cbam1 = CBAM3D(64)
+        self.cbam2 = CBAM3D(128)
 
-        self.backbone.layer2 = nn.Sequential(self.backbone.layer2, CBAM3D(128))
+        self.backbone.layer1 = nn.Sequential(self.backbone.layer1, self.cbam1)
+        self.backbone.layer2 = nn.Sequential(self.backbone.layer2, self.cbam2)
 
         self.backbone.fc = nn.Identity()
-
-        # FC layer to predict final PPG value per frame
         self.fc = nn.Linear(512, 3)
 
-    def forward(self, x):  # x [64, 3, 3, 112, 112] -> [batch, C, seq_len, H, W]
-        x = self.backbone(x)  # x [batch, 512]
-        x = self.fc(x)  # x [batch, 3]
-        return x
+    def forward(self, x):
+        attention_maps = {}
+
+        # Passage dans la couche 1 + CBAM3D
+        x = self.backbone.stem(x)
+        x = self.backbone.layer1[0](x)  # RésNet3D layer1
+        x, attn1 = self.cbam1(x)  # CBAM3D de layer1
+        attention_maps["layer1"] = attn1
+
+        # Passage dans la couche 2 + CBAM3D
+        x = self.backbone.layer2[0](x)  # RésNet3D layer2
+        x, attn2 = self.cbam2(x)  # CBAM3D de layer2
+        attention_maps["layer2"] = attn2
+
+        # Passage dans les couches finales de ResNet3D
+        x = self.backbone.layer3(x)
+        x = self.backbone.layer4(x)
+        x = self.backbone.avgpool(x)
+        x = torch.flatten(x, 1)
+
+        # Prédiction finale
+        x = self.fc(x)
+
+        return x, attention_maps

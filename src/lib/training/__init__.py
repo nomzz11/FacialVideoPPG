@@ -7,3 +7,4 @@ from .train_model import train_model
 from .validate_model import validate_model
 from .test_model import test_model
 from .plot_ppg_signal import plotPpgSignal
+from .plot_attention_maps import plot_attention_maps
