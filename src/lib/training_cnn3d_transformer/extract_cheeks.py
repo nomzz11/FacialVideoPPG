@@ -9,52 +9,58 @@ mtcnn = MTCNN(
 )
 
 
-def extract_cheeks_square(frame, output_size=112):
+def extract_cheeks(frame, output_size=112):
     """
-    Détecte précisément les joues (gauche et droite), les combine en une image carrée.
-
-    Retourne : une image carrée (RGB) prête à être utilisée par le modèle.
+    Détecte précisément les joues gauche et droite depuis une frame avec MTCNN.
+    Retourne une image carrée combinant les deux joues.
     """
-    img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    boxes, probs, landmarks = mtcnn.detect(img, landmarks=True)
+    img_rgb = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    boxes, probs, landmarks = mtcnn.detect(img_rgb, landmarks=True)
 
-    if landmarks is None:
-        print("Aucun visage détecté !")
+    if landmarks is None or len(landmarks) == 0:
+        print("Aucun visage détecté")
         return None
 
-    landmark = landmarks[0]
+    landmarks = landmarks[0]
 
-    left_eye, right_eye, nose, mouth_left, mouth_right = landmark
+    # Landmarks précis pour joues
+    left_eye, right_eye, _, mouth_left, mouth_right = landmarks
 
-    # Joue Gauche
-    cheek_left_x = int(
-        landmarks[0][0][0] - 0.4 * abs(landmarks[0][0][0] - landmarks[0][3][0])
+    h, w, _ = frame.shape
+
+    # Joues Gauche
+    cheek_left_x1 = int(max(mouth_left[0] - 0.6 * abs(mouth_left[0] - left_eye[0]), 0))
+    cheek_left_x2 = int(mouth_left[0])
+    cheek_left_y1 = int(left_eye[1])
+    cheek_left_y2 = int(mouth_left[1] + 0.2 * abs(mouth_left[1] - left_eye[1]))
+    cheek_left_y2 = min(cheek_left_y2, h)
+
+    left_cheek = frame[cheek_left_y1:cheek_left_y2, cheek_left_x1:cheek_left_x2]
+
+    # Joue Droite
+    cheek_right_x1 = int(mouth_right[0])
+    cheek_right_x2 = int(
+        min(mouth_right[0] + 0.6 * abs(right_eye[0] - mouth_right[0]), w)
     )
-    cheek_left = frame[
-        int(landmarks[0][0][1]) : int(landmarks[0][3][1]),
-        cheek_left_x : int(landmarks[0][3][0]),
-    ]
+    cheek_right_y1 = int(right_eye[1])
+    cheek_right_y2 = int(mouth_right[1] + 0.2 * abs(mouth_right[1] - right_eye[1]))
+    cheek_right_y2 = min(cheek_right_y2, h)
 
-    # Joue droite
-    cheek_right_x = int(
-        landmarks[0][4][0] + 0.4 * abs(landmarks[0][1][0] - landmarks[0][4][0])
-    )
-    cheek_right = frame[
-        int(landmarks[0][1][1]) : int(landmarks[0][4][1]),
-        int(landmarks[0][4][0]) : cheek_right_x,
-    ]
+    right_cheek = frame[cheek_right_y1:cheek_right_y2, cheek_right_x1:cheek_right_x2]
 
-    # Vérifier si les joues sont correctement extraites :
-    if cheek_left.size == 0 or cheek_right.size == 0:
-        print("Problème d'extraction des joues.")
+    # Vérification de la taille des joues
+    if left_cheek.size == 0 or right_cheek.size == 0:
+        print("Erreur extraction joues, vérifiez la détection des landmarks.")
         return None
 
-    # Redimensionner clairement à la même taille pour chaque joue
-    cheek_left_resized = cv2.resize(cheek_left, (112, 112))
-    cheek_right_resized = cv2.resize(cheek_right, (112, 112))
+    # Redimensionnement des joues
+    left_cheek_resized = cv2.resize(left_cheek, (output_size, output_size))
+    right_cheek_resized = cv2.resize(right_cheek, (output_size, output_size))
 
-    # Fusionner les joues en une image carrée claire :
-    combined_cheeks = np.hstack((cheek_left, cheek_right))
-    combined_cheeks = cv2.resize(combined_cheeks, (112, 112))
+    # Combinaison claire des joues côte-à-côte
+    combined_cheeks = np.hstack((left_cheek_resized, right_cheek_resized))
 
-    return combined_cheeks
+    # Redimension finale pour un carré parfait
+    combined_cheeks_square = cv2.resize(combined_cheeks, (output_size, output_size))
+
+    return combined_cheeks_square
