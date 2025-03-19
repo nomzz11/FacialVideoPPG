@@ -50,6 +50,9 @@ class FacialVideoDataset(Dataset):
         # Grouper les frames par vidéo pour former des séquences
         self.grouped_data = self.data.groupby("video_name")
 
+        # Calculer les stats des vidéos pour la normalisation
+        self.video_stats = self._compute_video_stats()
+
         # Liste des échantillons possibles (séquences ou frames uniques)
         self.samples = self._generate_samples()
 
@@ -128,7 +131,32 @@ class FacialVideoDataset(Dataset):
                 sequences.append(frame_indices[i : i + self.sequence_length])
         return sequences
 
-    def detect_face(self, image):
+    def _compute_video_stats(self):
+        """Calcule la moyenne et l'écart-type des images de chaque vidéo."""
+        video_stats = {}
+
+        for video_name in self.data["video_name"].unique():
+            frames = self.data[self.data["video_name"] == video_name]["frame_name"]
+            image_list = []
+
+            for frame in frames:
+                frame_path = os.path.join(self.data_dir, video_name, f"{frame:04d}.jpg")
+                image = np.array(
+                    Image.open(frame_path).convert("RGB"), dtype=np.float32
+                )
+                image_list.append(image)
+
+            if len(image_list) > 0:
+                images_array = np.stack(
+                    image_list, axis=0
+                )  # Shape: (num_frames, H, W, C)
+                mean = np.mean(images_array, axis=(0, 1, 2))
+                std = np.std(images_array, axis=(0, 1, 2))
+                video_stats[video_name] = (mean, std)
+
+        return video_stats
+
+    def detect_face(self, image, video_name):
         image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
@@ -141,6 +169,13 @@ class FacialVideoDataset(Dataset):
                 faces, key=lambda rect: rect[2] * rect[3], reverse=True
             )[0]
             face_crop = image_cv[y : y + h, x : x + w]
+
+            if video_name in self.video_stats:
+                mean, std = self.video_stats[video_name]
+                face_crop = face_crop.astype(np.float32)
+                face_crop = (face_crop - mean) / (std + 1e-8)  # Évite div/0
+                face_crop = np.clip(face_crop * 255, 0, 255).astype(np.uint8)
+
             return Image.fromarray(cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB))
 
         return image
@@ -161,7 +196,9 @@ class FacialVideoDataset(Dataset):
             ppg_value = row["ppg_value"]
 
             image = Image.open(frame_path).convert("RGB")
-            image = self.detect_face(image)  # Appliquer la détection du visage
+            image = self.detect_face(
+                image, video_folder
+            )  # Appliquer la détection + normalisation du visage
 
             if self.transform:
                 image = self.transform(image)
