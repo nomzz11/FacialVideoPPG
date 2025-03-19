@@ -69,6 +69,4 @@ def extract_cheeks(frame_pil, output_size=112):
     # Fusionner les joues pour obtenir une image carrée
     combined_cheeks = np.hstack((cheek_left_resized, cheek_right_resized))
 
-    print("okay")
-
     return combined_cheeks
