@@ -12,7 +12,7 @@ def validate_model(model, val_dataloader, criterion, device):
         for frames, ppg_values in val_dataloader:
 
             frames, ppg_values = frames.to(device), ppg_values.to(device).float()
-            outputs = model(frames).squeeze()
+            outputs, attention_maps = model(frames).squeeze()
             loss = criterion(outputs, ppg_values)
             val_loss += loss.item()
 
@@ -23,4 +23,4 @@ def validate_model(model, val_dataloader, criterion, device):
     mae = mean_absolute_error(val_targets, val_preds)
     r2 = r2_score(val_targets, val_preds)
 
-    return val_loss, mae, r2
+    return val_loss, mae, r2, attention_maps
