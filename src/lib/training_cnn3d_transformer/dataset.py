@@ -50,6 +50,9 @@ class FacialVideoDataset(Dataset):
         # Grouper les frames par vidéo pour former des séquences
         self.grouped_data = self.data.groupby("video_name")
 
+        # Calculer les stats des vidéos pour la normalisation
+        self.video_stats = self._compute_video_stats()
+
         # Liste des échantillons possibles (séquences ou frames uniques)
         self.samples = self._generate_samples()
 
