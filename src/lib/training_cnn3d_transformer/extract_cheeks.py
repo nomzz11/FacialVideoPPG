@@ -39,8 +39,8 @@ def extract_cheeks(frame_pil, output_size=112):
         selected_landmarks = landmarks[largest_index]
     else:
         selected_landmarks = landmarks[0] if landmarks is not None else None
-    # Récupération des landmarks
-    landmark = landmarks[0]
+
+    selected_landmarks = np.array(selected_landmarks)
     print("landmarks : ", landmarks)
     print("landmark", selected_landmarks)
     left_eye, right_eye, nose, mouth_left, mouth_right = selected_landmarks
@@ -66,6 +66,8 @@ def extract_cheeks(frame_pil, output_size=112):
     ]
 
     # Vérifier si les joues sont extraites
+    print("cheekL", cheek_left)
+    print("cheekR", cheek_right)
     if cheek_left.size == 0 or cheek_right.size == 0:
         print("Problème d'extraction des joues (taille 0).")
         return None
