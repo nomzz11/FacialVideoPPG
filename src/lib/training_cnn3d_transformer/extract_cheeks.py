@@ -30,6 +30,8 @@ def extract_cheeks(frame_pil, output_size=112):
 
     # Récupération des landmarks
     landmark = landmarks[0]
+    print("landmarks : ", landmarks)
+    print("landmark", landmark)
     left_eye, right_eye, nose, mouth_left, mouth_right = landmark
 
     # Convertir l'image PIL en numpy pour OpenCV
