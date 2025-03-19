@@ -1,6 +1,6 @@
 import os, pandas as pd, numpy as np, cv2, torch
 from torch.utils.data import Dataset
-from src.lib.training_cnn3d_transformer import extract_forehead_cheeks_ordered
+from src.lib.training_cnn3d_transformer import extract_cheeks_square
 from sklearn.model_selection import train_test_split
 from PIL import Image
 
@@ -50,8 +50,6 @@ class FacialVideoDataset(Dataset):
 
         # Grouper les frames par vidéo pour former des séquences
         self.grouped_data = self.data.groupby("video_name")
-
-        self.normalized_image = normalized_image()
 
         # Liste des échantillons possibles (séquences ou frames uniques)
         self.samples = self._generate_samples()
@@ -157,7 +155,7 @@ class FacialVideoDataset(Dataset):
 
         return image
 
-    def normalize_image(self, image):
+    def _normalize_image(self, image):
         image = np.array(image).astype(np.float32) / 255.0
         mean = np.mean(image, axis=(0, 1))
         std = np.std(image, axis=(0, 1)) + 1e-8  # Évite division par zéro
@@ -182,12 +180,12 @@ class FacialVideoDataset(Dataset):
             image = Image.open(frame_path).convert("RGB")
 
             frame = cv2.imread(frame_path)
-            composite_image = extract_forehead_cheeks_ordered(frame)
+            composite_image = extract_cheeks_square(frame)
 
             if composite_image is None:
                 continue
 
-            normalized_image = self.normalize_image(composite_image)
+            normalized_image = self._normalize_image(composite_image)
 
             if self.transform:
                 normalized_image = self.transform(normalized_image)
