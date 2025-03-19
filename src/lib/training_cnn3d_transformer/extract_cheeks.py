@@ -56,8 +56,6 @@ def extract_cheeks(frame_pil, output_size=112):
     cheek_left = frame[y1_l:y2_l, x1_l:x2_l]
     cheek_right = frame[y1_r:y2_r, x1_r:x2_r]
 
-    # Vérifier si les joues sont extraites
-    print(f"left_cheek: {cheek_left}, right_cheek: {cheek_right}")
     if cheek_left.size == 0 or cheek_right.size == 0:
         print("Problème d'extraction des joues (taille 0).")
         return None
