@@ -180,7 +180,8 @@ class FacialVideoDataset(Dataset):
             ppg_value = row["ppg_value"]
 
             frame = Image.open(frame_path).convert("RGB")
-            composite_image = extract_cheeks(frame)
+            detect_face = self.detect_face(frame)
+            composite_image = extract_cheeks(detect_face)
 
             if composite_image is None:
                 continue

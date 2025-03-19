@@ -41,34 +41,23 @@ def extract_cheeks(frame_pil, output_size=112):
         selected_landmarks = landmarks[0] if landmarks is not None else None
 
     selected_landmarks = np.array(selected_landmarks)
-    print("landmarks : ", landmarks)
-    print("landmark", selected_landmarks)
     left_eye, right_eye, nose, mouth_left, mouth_right = selected_landmarks
 
     # Convertir l'image PIL en numpy pour OpenCV
     frame = np.array(frame_pil)
 
     # Définir les coordonnées des joues (approximatives)
-    cheek_left_top = (int(left_eye[0] - 40), int(left_eye[1] + 40))
-    cheek_left_bottom = (int(mouth_left[0]), int(mouth_left[1] + 40))
+    x1_l, x2_l = sorted([int(left_eye[0] - 40), int(mouth_left[0])])
+    y1_l, y2_l = sorted([int(left_eye[1] + 40), int(mouth_left[1] + 40)])
 
-    cheek_right_top = (int(right_eye[0] + 40), int(right_eye[1] + 40))
-    cheek_right_bottom = (int(mouth_right[0]), int(mouth_right[1] + 40))
+    x1_r, x2_r = sorted([int(right_eye[0] + 40), int(mouth_right[0])])
+    y1_r, y2_r = sorted([int(right_eye[1] + 40), int(mouth_right[1] + 40)])
 
-    # Extraire les joues
-    cheek_left = frame[
-        cheek_left_top[1] : cheek_left_bottom[1],
-        cheek_left_top[0] : cheek_left_bottom[0],
-    ]
-    cheek_right = frame[
-        cheek_right_top[1] : cheek_right_bottom[1],
-        cheek_right_top[0] : cheek_right_bottom[0],
-    ]
+    cheek_left = frame[y1_l:y2_l, x1_l:x2_l]
+    cheek_right = frame[y1_r:y2_r, x1_r:x2_r]
 
     # Vérifier si les joues sont extraites
-    print(
-        f"right_cheek_top: {cheek_right_top}, right_cheek_bottom: {cheek_right_bottom}"
-    )
+    print(f"left_cheek: {cheek_left}, right_cheek: {cheek_right}")
     if cheek_left.size == 0 or cheek_right.size == 0:
         print("Problème d'extraction des joues (taille 0).")
         return None
