@@ -4,6 +4,9 @@ import numpy as np
 import json
 import torch.optim as optim
 import torch.nn as nn
+import torch.multiprocessing as mp
+
+mp.set_start_method("spawn", force=True)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
