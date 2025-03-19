@@ -241,9 +241,9 @@ class FacialVideoDataset(Dataset):
             frame_path = os.path.join(self.data_dir, video_folder, frame_name)
             ppg_value = row["ppg_value"]
 
-            image = Image.open(frame_path).convert("RGB")
+            frame = Image.open(frame_path).convert("RGB")
 
-            frame = cv2.imread(frame_path)
+            # frame = cv2.imread(frame_path)
             composite_image = self.extract_cheeks(frame)
 
             if composite_image is None:
