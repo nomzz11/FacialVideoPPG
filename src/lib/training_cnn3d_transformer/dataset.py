@@ -1,6 +1,5 @@
 import os, pandas as pd, numpy as np, cv2, torch
 from torch.utils.data import Dataset
-from src.lib.training_cnn3d_transformer import extract_cheeks_square
 from sklearn.model_selection import train_test_split
 from PIL import Image
 
@@ -166,6 +165,8 @@ class FacialVideoDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, id):
+        from src.lib.training_cnn3d_transformer import extract_cheeks_square
+
         frame_indices = self.samples[id]  # Liste de `sequence_length` indices
         frames = []
         ppg_values = []
