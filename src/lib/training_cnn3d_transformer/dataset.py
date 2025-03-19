@@ -129,7 +129,7 @@ class FacialVideoDataset(Dataset):
                 sequences.append(frame_indices[i : i + self.sequence_length])
         return sequences
 
-    def detect_face(self, image, video_name):
+    def detect_face(self, image):
         image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
