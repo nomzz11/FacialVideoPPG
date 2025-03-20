@@ -186,6 +186,7 @@ class FacialVideoDataset(Dataset):
             frame = Image.open(frame_path).convert("RGB")
             # detect_face = self.detect_face(frame)
             composite_image = extract_cheeks(frame, frame_idx, video_folder)
+            composite_image = Image.fromarray(composite_image)
 
             if composite_image is None:
                 print(f"Erreur : extract_cheeks a retourné None pour frame {frame_idx}")
