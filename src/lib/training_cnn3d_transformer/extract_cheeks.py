@@ -12,6 +12,15 @@ mtcnn = MTCNN(
 )
 
 
+def normalize_image(image):
+    if not isinstance(image, np.ndarray):
+        image = np.array(image).astype(np.float32) / 255.0
+    mean = np.mean(image, axis=(0, 1))
+    std = np.std(image, axis=(0, 1)) + 1e-8  # Évite division par zéro
+    normalized_image = (image - mean) / std
+    return Image.fromarray((normalized_image * 255).astype(np.uint8))
+
+
 def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     """
     Applique CLAHE (Correction de contraste adaptative) pour améliorer la détection faciale
@@ -28,8 +37,7 @@ def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     if not isinstance(image, np.ndarray):
         image = np.array(image)
 
-    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    lab = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
     l, a, b = cv2.split(lab)  # Séparation des canaux
 
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=grid_size)
@@ -38,10 +46,12 @@ def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     lab = cv2.merge((l, a, b))  # Fusionner les canaux
     enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # Retour en BGR
 
-    return Image.fromarray(enhanced_image)
+    normalized_image = normalize_image(enhanced_image)
+
+    return normalized_image
 
 
-def extract_cheeks(frame_pil, frame_id, output_size=112):
+def extract_cheeks(frame_pil, frame_id, video_folder, output_size=112):
     """
     Détecte les joues dans une image et les renvoie sous forme d'une image carrée fusionnée.
 
@@ -55,7 +65,7 @@ def extract_cheeks(frame_pil, frame_id, output_size=112):
 
     frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
 
-    print(f"extract_cheeks appelée pour frame {frame_id}")
+    print(f"extract_cheeks appelée pour frame {frame_id} de la video {video_folder}")
 
     # Détection des visages avec MTCNN
     boxes, probs, landmarks = mtcnn.detect(frame_pil, landmarks=True)
