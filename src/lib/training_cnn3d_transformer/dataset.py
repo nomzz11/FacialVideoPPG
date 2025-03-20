@@ -129,7 +129,7 @@ class FacialVideoDataset(Dataset):
                 sequences.append(frame_indices[i : i + self.sequence_length])
         return sequences
 
-    def detect_face(self, image):
+    def detect_face(self, image, margin_factor=1.3):  # Augmente la taille du crop
         image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
@@ -141,15 +141,18 @@ class FacialVideoDataset(Dataset):
             x, y, w, h = sorted(
                 faces, key=lambda rect: rect[2] * rect[3], reverse=True
             )[0]
-            face_crop = image_cv[y : y + h, x : x + w]
 
-            """
-            if video_name in self.video_stats:
-                mean, std = self.video_stats[video_name]
-                face_crop = face_crop.astype(np.float32)
-                face_crop = (face_crop - mean) / (std + 1e-8)  # Évite div/0
-                face_crop = np.clip(face_crop * 255, 0, 255).astype(np.uint8)"
-            """
+            # Augmenter la bounding box de `margin_factor`
+            new_w = int(w * margin_factor)
+            new_h = int(h * margin_factor)
+            new_x = max(0, x - (new_w - w) // 2)
+            new_y = max(0, y - (new_h - h) // 2)
+
+            # Vérifier que le crop reste dans les limites de l'image
+            new_x2 = min(image_cv.shape[1], new_x + new_w)
+            new_y2 = min(image_cv.shape[0], new_y + new_h)
+
+            face_crop = image_cv[new_y:new_y2, new_x:new_x2]
 
             return Image.fromarray(cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB))
 
