@@ -3,6 +3,7 @@ import torch
 
 
 def collate_fn(batch):
+    print("Batch received in collate_fn:", batch)
     """
     Regroupe les frames en séquences de 3 en s'assurant qu'elles viennent de la même vidéo.
     """
