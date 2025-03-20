@@ -102,11 +102,11 @@ class FacialVideoDataset(Dataset):
         frame_path = os.path.join(self.data_dir, video_name, frame_name)
 
         frame = Image.open(frame_path).convert("RGB")
-        composite_image = extract_cheeks(frame, idx, video_name)
-        composite_image = Image.fromarray(composite_image)
+        # composite_image = extract_cheeks(frame, idx, video_name)
+        # composite_image = Image.fromarray(composite_image)
 
         # Normalisation
-        composite_image = self._normalize_image(composite_image)
+        composite_image = self._normalize_image(frame)
         if self.transform:
             composite_image = self.transform(composite_image)
 
@@ -123,7 +123,7 @@ class FacialVideoDataset(Dataset):
             print(f"Vidéo {idx} ignorée.")
             return None
 
-        if frame_tensor is None or ppg_value is None:
+        if frame_tensor is None or ppg_value is None or frames.shape[0] == 0:
             return None
 
         return frame_tensor, ppg_value, video_name
