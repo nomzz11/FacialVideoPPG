@@ -102,11 +102,14 @@ class FacialVideoDataset(Dataset):
         frame_path = os.path.join(self.data_dir, video_name, frame_name)
 
         frame = Image.open(frame_path).convert("RGB")
-        # composite_image = extract_cheeks(frame, idx, video_name)
-        # composite_image = Image.fromarray(composite_image)
+        composite_image = extract_cheeks(frame, idx, video_name)
+        composite_image = Image.fromarray(composite_image)
+
+        if composite_image is None:
+            return None
 
         # Normalisation
-        composite_image = self._normalize_image(frame)
+        composite_image = self._normalize_image(composite_image)
         if self.transform:
             composite_image = self.transform(composite_image)
 
