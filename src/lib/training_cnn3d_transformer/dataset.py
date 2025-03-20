@@ -117,6 +117,12 @@ class FacialVideoDataset(Dataset):
         )  # (C, H, W)
         ppg_value = torch.tensor(row["ppg_value"], dtype=torch.float32)  # (1,)
 
+        if self.video_is_invalid(
+            idx
+        ):  # Méthode qui vérifie une condition personnalisée pour cette vidéo
+            print(f"Vidéo {idx} ignorée.")
+            return None
+
         return frame_tensor, ppg_value, video_name
 
     def _normalize_image(self, image):
@@ -126,3 +132,15 @@ class FacialVideoDataset(Dataset):
         std = np.std(image, axis=(0, 1)) + 1e-8  # Évite la division par zéro
         normalized_image = (image - mean) / std
         return Image.fromarray((normalized_image * 255).astype(np.uint8))
+
+    def video_is_invalid(self, idx):
+        # Critère pour ignorer une vidéo en particulier
+        invalid_videos = [
+            "ba17778fd8c441659d2c9d0142153c5d_1",
+            "ba17778fd8c441659d2c9d0142153c5d_2",
+        ]  # Liste d'IDs ou de noms de vidéos à ignorer
+        video_name = self.data.iloc[idx]["video_name"]
+
+        if video_name in invalid_videos:
+            return True
+        return False
