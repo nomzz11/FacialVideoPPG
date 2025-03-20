@@ -28,7 +28,8 @@ def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     if not isinstance(image, np.ndarray):
         image = np.array(image)
 
-    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
+    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    lab = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
     l, a, b = cv2.split(lab)  # Séparation des canaux
 
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=grid_size)
@@ -51,7 +52,10 @@ def extract_cheeks(frame_pil, frame_id, output_size=112):
     Returns:
         np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
     """
+
     frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
+
+    print(f"extract_cheeks appelée pour frame {frame_id}")
 
     # Détection des visages avec MTCNN
     boxes, probs, landmarks = mtcnn.detect(frame_pil, landmarks=True)
