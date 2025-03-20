@@ -7,7 +7,9 @@ from facenet_pytorch import MTCNN
 
 # Initialisation du détecteur de visages MTCNN
 mtcnn = MTCNN(
-    select_largest=True, device="cuda" if torch.cuda.is_available() else "cpu"
+    thresholds=[0.5, 0.6, 0.7],
+    select_largest=True,
+    device="cuda" if torch.cuda.is_available() else "cpu",
 )
 
 
