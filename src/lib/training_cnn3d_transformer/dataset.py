@@ -192,10 +192,12 @@ class FacialVideoDataset(Dataset):
                 print(f"Erreur : extract_cheeks a retourné None pour frame {frame_idx}")
                 continue
 
-            if self.transform:
-                composite_image = self.transform(composite_image)
+            normalized_image = self._normalize_image(composite_image)
 
-            frames.append(composite_image)
+            if self.transform:
+                normalized_image = self.transform(normalized_image)
+
+            frames.append(normalized_image)
             ppg_values.append(ppg_value)
 
         frames = torch.stack(frames)  # Shape: (seq_len, C, H, W) -> 4D tensor

@@ -61,7 +61,6 @@ def extract_cheeks(frame_pil, frame_id, video_folder, output_size=112):
     Returns:
         np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
     """
-    frame_pil = normalize_image(frame_pil)
 
     # frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
 
