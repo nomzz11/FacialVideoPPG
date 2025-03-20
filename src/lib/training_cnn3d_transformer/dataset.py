@@ -184,17 +184,17 @@ class FacialVideoDataset(Dataset):
             ppg_value = row["ppg_value"]
 
             frame = Image.open(frame_path).convert("RGB")
-            detect_face = self.detect_face(frame)
+            # detect_face = self.detect_face(frame)
             composite_image = extract_cheeks(frame, frame_idx, video_folder)
 
             if composite_image is None:
                 print(f"Erreur : extract_cheeks a retourné None pour frame {frame_idx}")
                 continue
 
-            if self.transform:
-                normalized_image = self.transform(normalized_image)
+            # if self.transform:
+            # normalized_image = self.transform(normalized_image)
 
-            frames.append(normalized_image)
+            frames.append(composite_image)
             ppg_values.append(ppg_value)
 
         frames = torch.stack(frames)  # Shape: (seq_len, C, H, W) -> 4D tensor
