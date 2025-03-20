@@ -12,10 +12,13 @@ mtcnn = MTCNN(
 )
 
 
-def adjust_brightness_contrast(image, alpha=1.3, beta=20):
+def adjust_brightness_contrast(image, alpha=1.2, beta=30):
     if not isinstance(image, np.ndarray):
-        image = np.array(image)
-    return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+        image = np.array(image)  # Convertir PIL → NumPy
+
+    image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)  # Ajustement B&C
+
+    return Image.fromarray(image)
 
 
 def extract_cheeks(frame_pil, frame_id, output_size=112):
