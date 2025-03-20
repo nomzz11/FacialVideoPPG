@@ -22,4 +22,7 @@ def main(video_folder, model_path, output_csv):
 
 
 if __name__ == "__main__":
-    main("../refined_data", "../experiments/0011/best_model.pth", "predictions.csv")
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    video_folder = os.path.join(project_root, "data")
+    model_path = os.path.join(project_root, "experiments/0011/best_model.pth")
+    main(video_folder, model_path, "predictions.csv")
