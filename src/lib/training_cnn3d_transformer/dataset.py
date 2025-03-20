@@ -123,7 +123,7 @@ class FacialVideoDataset(Dataset):
             print(f"Vidéo {idx} ignorée.")
             return None
 
-        if frame_tensor is None or ppg_value is None or frame.shape[0] == 0:
+        if frame_tensor is None or ppg_value is None:
             return None
 
         return frame_tensor, ppg_value, video_name
