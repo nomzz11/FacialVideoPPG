@@ -47,7 +47,6 @@ def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # Retour en BGR
 
     normalized_image = normalize_image(enhanced_image)
-
     return normalized_image
 
 
@@ -62,8 +61,9 @@ def extract_cheeks(frame_pil, frame_id, video_folder, output_size=112):
     Returns:
         np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
     """
+    frame_pil = normalize_image(frame_pil)
 
-    frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
+    # frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
 
     print(f"extract_cheeks appelée pour frame {frame_id} de la video {video_folder}")
 
