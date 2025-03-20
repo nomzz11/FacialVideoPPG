@@ -134,10 +134,11 @@ class FacialVideoDataset(Dataset):
         gray = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
         faces = self.face_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=10, minSize=(100, 100)
+            gray, scaleFactor=1.1, minNeighbors=6, minSize=(100, 100)
         )
 
         if len(faces) > 0:
+            print("nb faces", len(faces))
             x, y, w, h = sorted(
                 faces, key=lambda rect: rect[2] * rect[3], reverse=True
             )[0]
@@ -184,7 +185,7 @@ class FacialVideoDataset(Dataset):
 
             frame = Image.open(frame_path).convert("RGB")
             detect_face = self.detect_face(frame)
-            composite_image = extract_cheeks(detect_face)
+            composite_image = extract_cheeks(detect_face, frame_idx)
 
             if composite_image is None:
                 continue

@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import os
 from PIL import Image
 import cv2
 from facenet_pytorch import MTCNN
@@ -10,7 +11,7 @@ mtcnn = MTCNN(
 )
 
 
-def extract_cheeks(frame_pil, output_size=112):
+def extract_cheeks(frame_pil, frame_id, output_size=112):
     """
     Détecte les joues dans une image et les renvoie sous forme d'une image carrée fusionnée.
 
@@ -26,6 +27,21 @@ def extract_cheeks(frame_pil, output_size=112):
 
     if landmarks is None:
         print("Aucun visage détecté.")
+
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../..")
+        )
+        NO_FACE_DIR = os.path.join(project_root, "stats")
+
+        # Sauvegarde l'image si aucun visage détecté
+        if frame_id is not None:
+            save_path = os.path.join(NO_FACE_DIR, f"frame_{frame_id}.png")
+        else:
+            save_path = os.path.join(NO_FACE_DIR, "frame_unknown.png")
+
+        frame_pil.save(save_path)
+        print(f"Image sauvegardée : {save_path}")
+
         return None
 
     if landmarks is not None and len(landmarks) > 1:
