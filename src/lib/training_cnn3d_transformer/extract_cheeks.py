@@ -12,13 +12,29 @@ mtcnn = MTCNN(
 )
 
 
-def adjust_brightness_contrast(image, alpha=1.2, beta=30):
-    if not isinstance(image, np.ndarray):
-        image = np.array(image)  # Convertir PIL → NumPy
+def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
+    """
+    Applique CLAHE (Correction de contraste adaptative) pour améliorer la détection faciale
+    sur tout type de peau sans distorsion excessive.
 
-    image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)  # Ajustement B&C
+    Args:
+        image (numpy.ndarray): Image BGR (OpenCV)
+        clip_limit (float): Intensité de la correction (plus élevé = plus de contraste)
+        grid_size (tuple): Taille de la grille pour le traitement adaptatif
 
-    return Image.fromarray(image)
+    Returns:
+        numpy.ndarray: Image améliorée en BGR
+    """
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
+    l, a, b = cv2.split(lab)  # Séparation des canaux
+
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=grid_size)
+    l = clahe.apply(l)  # Appliquer CLAHE sur la luminance
+
+    lab = cv2.merge((l, a, b))  # Fusionner les canaux
+    enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # Retour en BGR
+
+    return Image.fromarray(enhanced_image)
 
 
 def extract_cheeks(frame_pil, frame_id, output_size=112):
@@ -32,7 +48,7 @@ def extract_cheeks(frame_pil, frame_id, output_size=112):
     Returns:
         np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
     """
-    frame_pil = adjust_brightness_contrast(frame_pil)  # Appliquer avant MTCNN
+    frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
 
     # Détection des visages avec MTCNN
     boxes, probs, landmarks = mtcnn.detect(frame_pil, landmarks=True)
