@@ -16,6 +16,9 @@ def collate_fn(batch):
     temp_ppg = []
 
     for frame, ppg, video_name in batch:
+        if frame is None or ppg is None:
+            continue
+
         if video_name != current_video:
             temp_seq = []  # Réinitialiser si nouvelle vidéo
             temp_ppg = []
