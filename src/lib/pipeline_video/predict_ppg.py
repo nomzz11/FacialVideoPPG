@@ -1,41 +1,33 @@
 import torch
 import numpy as np
+from PIL import Image
 from torchvision import transforms
+from src.lib.training_cnn3d_transformer import r3d_transformer
 
 
 def predict_ppg(model, faces, device="cuda"):
     model.to(device).eval()
 
     transform = transforms.Compose(
-        [
-            transforms.Resize((224, 224)),  # Redimensionne toutes les images à 224x224
-            transforms.ToTensor(),  # Convertit en tenseur
-        ]
+        [transforms.Resize((1121, 112)), transforms.ToTensor()]
     )
 
-    # Transforme toutes les images en tenseurs
-    face_tensors = torch.stack([transform(face) for face in faces])  # (N, 3, 224, 224)
+    face_tensors = torch.stack(
+        [transform(Image.fromarray(face)) for face in faces]
+    )  # (N, 3, 224, 224)
 
-    # Vérifie que le nombre de frames est un multiple de 3
     num_frames = face_tensors.shape[0]
-    num_groups = num_frames // 3  # Nombre de groupes de 3 frames
+    num_groups = num_frames // 3
 
     if num_frames % 3 != 0:
         print(
             f"Attention : {num_frames} frames détectées, tronquées à {num_groups * 3}"
         )
-        face_tensors = face_tensors[: num_groups * 3]  # Tronquer à un multiple de 3
+        face_tensors = face_tensors[: num_groups * 3]
 
-    # Regroupe en séquences de 3 frames
-    face_tensors = face_tensors.view(
-        num_groups, 3, 3, 224, 224
-    )  # (batch, 3, 3, 224, 224)
+    face_tensors = face_tensors.view(num_groups, 3, 3, 224, 224).to(device)
 
-    # Envoi sur le device
-    face_tensors = face_tensors.to(device)
-
-    # Prédiction sans calcul de gradients
     with torch.no_grad():
-        ppg_preds = model(face_tensors).cpu().numpy().flatten()
+        ppg_signal = model(face_tensors).cpu().numpy().flatten()
 
-    return ppg_preds
+    return ppg_signal

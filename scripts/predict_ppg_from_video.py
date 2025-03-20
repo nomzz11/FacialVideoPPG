@@ -1,11 +1,25 @@
 import os, sys
+import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from src.lib.pipeline_video.process_video import process_video
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-video_dir = os.path.join(base_dir, "../data/0a687dbdecde4cf1b25e00e5f513a323_1.mp4")
-model_dir = os.path.join(base_dir, "../experiments/0008/best_model.pth")
 
-process_video(video_dir, model_dir)
+def main(video_folder, model_path, output_csv):
+    videos = [f for f in os.listdir(video_folder) if f.endswith(".mp4")]
+    results = {}
+
+    for video in videos:
+        video_path = os.path.join(video_folder, video)
+        name, ppg_signal, avg_hr = process_video(video_path, model_path)
+
+        if name:
+            results[name] = list(ppg_signal) + [avg_hr]
+
+    df = pd.DataFrame.from_dict(results, orient="index")
+    df.to_csv(output_csv, index_label="Video")
+    print(f"Résultats sauvegardés dans {output_csv}")
+
+
+if __name__ == "__main__":
+    main("../refined_data", "../experiments/008/best_model.pth", "predictions.csv")
