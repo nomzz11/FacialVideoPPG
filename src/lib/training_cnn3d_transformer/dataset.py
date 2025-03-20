@@ -191,8 +191,8 @@ class FacialVideoDataset(Dataset):
                 print(f"Erreur : extract_cheeks a retourné None pour frame {frame_idx}")
                 continue
 
-            # if self.transform:
-            # normalized_image = self.transform(normalized_image)
+            if self.transform:
+                composite_image = self.transform(composite_image)
 
             frames.append(composite_image)
             ppg_values.append(ppg_value)
