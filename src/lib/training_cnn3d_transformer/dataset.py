@@ -117,7 +117,7 @@ class FacialVideoDataset(Dataset):
         )  # (C, H, W)
         ppg_value = torch.tensor(row["ppg_value"], dtype=torch.float32)  # (1,)
 
-        return frame_tensor, ppg_value
+        return frame_tensor, ppg_value, video_name
 
     def _normalize_image(self, image):
         """Normalise l'image pour éviter les biais d'éclairage"""
