@@ -25,6 +25,9 @@ def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
     Returns:
         numpy.ndarray: Image améliorée en BGR
     """
+    if not isinstance(image, np.ndarray):
+        image = np.array(image)
+
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
     l, a, b = cv2.split(lab)  # Séparation des canaux
 
