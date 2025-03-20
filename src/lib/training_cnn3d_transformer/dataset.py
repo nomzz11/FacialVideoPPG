@@ -185,7 +185,7 @@ class FacialVideoDataset(Dataset):
 
             frame = Image.open(frame_path).convert("RGB")
             detect_face = self.detect_face(frame)
-            composite_image = extract_cheeks(detect_face, frame_idx)
+            composite_image = extract_cheeks(frame, frame_idx)
 
             if composite_image is None:
                 continue
