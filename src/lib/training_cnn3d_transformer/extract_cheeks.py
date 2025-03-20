@@ -13,6 +13,8 @@ mtcnn = MTCNN(
 
 
 def adjust_brightness_contrast(image, alpha=1.3, beta=20):
+    if not isinstance(image, np.ndarray):
+        image = np.array(image)
     return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
 
 
