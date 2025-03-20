@@ -22,4 +22,4 @@ def main(video_folder, model_path, output_csv):
 
 
 if __name__ == "__main__":
-    main("../refined_data", "../experiments/008/best_model.pth", "predictions.csv")
+    main("../refined_data", "../experiments/0011/best_model.pth", "predictions.csv")
