@@ -7,10 +7,13 @@ from facenet_pytorch import MTCNN
 
 # Initialisation du détecteur de visages MTCNN
 mtcnn = MTCNN(
-    thresholds=[0.5, 0.6, 0.7],
     select_largest=True,
     device="cuda" if torch.cuda.is_available() else "cpu",
 )
+
+
+def adjust_brightness_contrast(image, alpha=1.3, beta=20):
+    return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
 
 
 def extract_cheeks(frame_pil, frame_id, output_size=112):
@@ -24,6 +27,8 @@ def extract_cheeks(frame_pil, frame_id, output_size=112):
     Returns:
         np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
     """
+    frame_pil = adjust_brightness_contrast(frame_pil)  # Appliquer avant MTCNN
+
     # Détection des visages avec MTCNN
     boxes, probs, landmarks = mtcnn.detect(frame_pil, landmarks=True)
 
