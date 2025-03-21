@@ -58,15 +58,15 @@ if __name__ == "__main__":
     mse_loss = nn.MSELoss()
     pearson_loss = PearsonLoss()
 
-    alpha = 0.7  # Poids pour la MSE
-    beta = 0.3  # Poids pour la Pearson Loss
+    alpha = 0.8  # Poids pour la MSE
+    beta = 0.2  # Poids pour la Pearson Loss
 
     def combined_loss(pred, target):
         loss_mse = mse_loss(pred, target)
         loss_pearson = pearson_loss(pred, target)
         return alpha * loss_mse + beta * loss_pearson
 
-    criterion = combined_loss
+    criterion = mse_loss
 
     optimizer = optim.Adam(
         model.parameters(),
