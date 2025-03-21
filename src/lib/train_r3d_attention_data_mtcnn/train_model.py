@@ -40,6 +40,7 @@ def train_model(
             predictions = predictions.squeeze()
             loss = criterion(predictions, ppg_signal)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             train_loss += loss.item()
 
@@ -55,8 +56,6 @@ def train_model(
             or torch.isnan(train_preds_tenseurs).any()
         ):
             print("NaN détecté dans les cibles ou les prédictions !")
-        else:
-            print("okay")
         print(train_preds)
         train_mae = mean_absolute_error(train_targets, train_preds)
         train_r2 = r2_score(train_targets, train_preds)
