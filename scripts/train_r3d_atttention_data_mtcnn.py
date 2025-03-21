@@ -16,6 +16,7 @@ from src.lib.train_r3d_attention_data_mtcnn import (
     FacialVideoDataset,
     split_dataset,
     dataloader,
+    CCCLoss,
 )
 from src.lib.training_cnn3d_transformer import (
     r3d_transformer,
@@ -55,18 +56,32 @@ if __name__ == "__main__":
         train_dataset, val_dataset, test_dataset, cli_options["batch_size"]
     )
 
+    loss = cli_options["loss"]
     mse_loss = nn.MSELoss()
     pearson_loss = PearsonLoss()
+    ccc_loss = CCCLoss()
 
     alpha = 0.8  # Poids pour la MSE
     beta = 0.2  # Poids pour la Pearson Loss
 
-    def combined_loss(pred, target):
+    def combined_MSE_Pearson_loss(pred, target):
         loss_mse = mse_loss(pred, target)
         loss_pearson = pearson_loss(pred, target)
         return alpha * loss_mse + beta * loss_pearson
 
-    criterion = mse_loss
+    def combined_MSE_CCC_loss(pred, target):
+        loss_mse = mse_loss(pred, target)
+        loss_ccc = ccc_loss(pred, target)
+        return alpha * loss_mse + beta * loss_ccc
+
+    if loss == "mse":
+        criterion = mse_loss
+    elif loss == "mse_ccc":
+        criterion = combined_MSE_CCC_loss
+    elif loss == "mse_pearson":
+        criterion = combined_MSE_Pearson_loss
+    else:
+        raise ValueError("loss must be 'mse' , 'mse_ccc' or 'mse_pearson'.")
 
     optimizer = optim.Adam(
         model.parameters(),

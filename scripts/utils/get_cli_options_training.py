@@ -28,5 +28,12 @@ def get_cli_options_training():
     )
     parser.add_argument("--batch_size", type=int, default=64, help="Taille du batch")
     parser.add_argument("--gpu", type=int, choices=[0, 1], default=0, help="GPU")
+    parser.add_argument(
+        "--loss",
+        type=str,
+        choices=["mse", "mse_ccc", "mse_pearson"],
+        default="mse",
+        help="loss",
+    )
     args = parser.parse_args()
     return vars(args)
