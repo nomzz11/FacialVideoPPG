@@ -106,7 +106,7 @@ if __name__ == "__main__":
         "epochs": cli_options["epochs"],
         "learning_rate": cli_options["lr"],
         "weight_decay": cli_options["weight_decay"],
-        "loss_function": "MSELoss",
+        "loss_function": cli_options["loss"],
         "optimizer": "Adam",
         "dataset_split_strategy": cli_options["split_strategy"],
         "batch_size": train_dataloader.batch_size,
