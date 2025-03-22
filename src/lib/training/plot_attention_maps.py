@@ -15,8 +15,8 @@ def plot_attention_maps(output_dir, attention_maps_dict):
         - "layer2_attention": tensor [B,1,T,H,W]
     """
 
-    attn_layer1 = attention_maps_dict["layer1_attention"].cpu().numpy()  # [B,1,T,H,W]
-    attn_layer2 = attention_maps_dict["layer2_attention"].cpu().numpy()
+    attn_layer1 = attention_maps_dict["layer1"].cpu().numpy()  # [B,1,T,H,W]
+    attn_layer2 = attention_maps_dict["layer2"].cpu().numpy()
 
     total_videos = attn_layer1.shape[0]
 
