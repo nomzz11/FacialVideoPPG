@@ -25,24 +25,32 @@ def plot_attention_maps(output_dir, attention_maps_dict):
     selected_indices = [0, total_videos - 1] + random_indices
 
     for idx in selected_indices:
-        num_frames = attn_layer1.shape[2]
+        try:
+            num_frames = attn_layer1.shape[2]
 
-        fig, axes = plt.subplots(2, num_frames, figsize=(4 * num_frames, 8))
-        plt.suptitle(f"Attention Maps - Video {idx}", fontsize=16)
+            # On ne prend que la première et dernière frame
+            selected_frames = [0, num_frames - 1]
 
-        for t in range(num_frames):
-            # Attention du Layer 1
-            axes[0, t].imshow(attn_layer1[idx, 0, t], cmap="jet")
-            axes[0, t].set_title(f"Layer1 - Frame {t}")
-            axes[0, t].axis("off")
+            fig, axes = plt.subplots(2, 2, figsize=(8, 8))  # 2 lignes, 2 colonnes
+            plt.suptitle(f"Attention Maps - Video {idx}", fontsize=16)
 
-            # Attention map du Layer 2
-            axes[1, t].imshow(attn_layer2[idx, 0, t], cmap="jet")
-            axes[1, t].set_title(f"Layer2 - Frame {t}")
-            axes[1, t].axis("off")
+            for i, t in enumerate(selected_frames):
+                # Attention du Layer 1
+                axes[0, i].imshow(attn_layer1[idx, 0, t], cmap="jet")
+                axes[0, i].set_title(f"Layer1 - Frame {t}")
+                axes[0, i].axis("off")
 
-        plt.tight_layout(rect=[0, 0, 1, 0.95])
+                # Attention map du Layer 2
+                axes[1, i].imshow(attn_layer2[idx, 0, t], cmap="jet")
+                axes[1, i].set_title(f"Layer2 - Frame {t}")
+                axes[1, i].axis("off")
 
-        # Sauvegarde le plot en PNG clairement nommé
-        plt.savefig(os.path.join(output_dir, f"attention_video_{idx}.png"))
-        plt.close(fig)
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+            # Sauvegarde le plot en PNG clairement nommé
+            plt.savefig(os.path.join(output_dir, f"attention_video_{idx}.png"))
+            plt.close(fig)
+
+        except Exception as e:
+            print(f"Erreur lors du traitement de la vidéo {idx}: {e}")
+            continue  # Continue avec la prochaine vidéo
