@@ -34,7 +34,6 @@ def train_model(
 
         # Training Loop
         for frames, ppg_signal in train_dataloader:
-            print(ppg_signal)
             frames, ppg_signal = frames.to(device), ppg_signal.to(device).float()
             optimizer.zero_grad()
             predictions, attention_maps = model(frames)

@@ -29,7 +29,6 @@ class PearsonLoss(nn.Module):
                     loss += 1.0
             else:
                 # Aucune variance = aucune corrélation possible
-                print("Aucune variance")
                 loss += 1.0
 
         return loss / batch_size
