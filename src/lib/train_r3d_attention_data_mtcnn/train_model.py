@@ -88,17 +88,17 @@ def train_model(
             best_val_loss = val_loss
             torch.save(model.state_dict(), os.path.join(save_dir, "best_model.pth"))
 
+    # Saving training logs
+    log_path = os.path.join(save_dir, "training_log.json")
+    with open(log_path, "w") as f:
+        json.dump(training_log, f, indent=4)
+
     plots_path = os.path.join(save_dir, "plots")
     os.makedirs(plots_path, exist_ok=True)
     filtered_ppg = bandpass_filter(train_preds, fs=30)
     plotPpgSignal(plots_path, train_targets, train_preds, filtered_ppg)
 
     plot_attention_maps(plots_path, attention_maps)
-
-    # Saving training logs
-    log_path = os.path.join(save_dir, "training_log.json")
-    with open(log_path, "w") as f:
-        json.dump(training_log, f, indent=4)
 
     print(
         f"Training finished ! Best model of Job {job_id} saved with val_loss: {best_val_loss:.4f}"
