@@ -31,7 +31,7 @@ def get_cli_options_training():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["mse", "mse_ccc", "mse_pearson"],
+        choices=["mse", "mse_ccc", "pearson"],
         default="mse",
         help="loss",
     )

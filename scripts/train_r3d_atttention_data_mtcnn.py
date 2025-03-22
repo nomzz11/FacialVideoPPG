@@ -78,8 +78,8 @@ if __name__ == "__main__":
         criterion = mse_loss
     elif loss == "mse_ccc":
         criterion = combined_MSE_CCC_loss
-    elif loss == "mse_pearson":
-        criterion = combined_MSE_Pearson_loss
+    elif loss == "pearson":
+        criterion = pearson_loss
     else:
         raise ValueError("loss must be 'mse' , 'mse_ccc' or 'mse_pearson'.")
 
