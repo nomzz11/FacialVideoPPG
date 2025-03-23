@@ -115,7 +115,7 @@ class FacialVideoDataset(Dataset):
             ].unique()
             if len(video_names) == 1:
                 valid_indices.append(i)
-            i += self.sequence_length // 2
+            i += self.sequence_length
         return valid_indices
 
     def __len__(self):
@@ -145,4 +145,5 @@ class FacialVideoDataset(Dataset):
                     print(
                         f"NaN détecté pour {row['video_name']} à la frame {row['frame_name']}"
                     )
+        print(ppg_values)
         return torch.stack(frames), torch.tensor(ppg_values)
