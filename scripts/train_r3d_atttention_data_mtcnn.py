@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     cli_options = get_cli_options_training()
 
-    model = r3d_transformer()
+    model = r3d_transformer(out_features=cli_options["seq_len"])
 
     job_id = get_next_job_id()
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
