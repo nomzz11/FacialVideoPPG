@@ -96,17 +96,6 @@ class FacialVideoDataset(Dataset):
             f"Splits enregistrés : {num_train} train, {num_val} val, {num_test} test."
         )
 
-        # Vérifier les NaN dans les PPG
-        print(
-            f"Nombres de NaN dans train: {self.metadata[self.metadata['video_name'].isin(train_videos)]['ppg_value'].isna().sum()}"
-        )
-        print(
-            f"Nombres de NaN dans val: {self.metadata[self.metadata['video_name'].isin(val_videos)]['ppg_value'].isna().sum()}"
-        )
-        print(
-            f"Nombres de NaN dans test: {self.metadata[self.metadata['video_name'].isin(test_videos)]['ppg_value'].isna().sum()}"
-        )
-
         split_videos = (
             train_videos
             if self.split == "train"
@@ -118,13 +107,15 @@ class FacialVideoDataset(Dataset):
     def _filter_valid_indices(self):
         """Garde uniquement les indices où une séquence complète de `sequence_length` frames est disponible."""
         valid_indices = []
-        for i in range(len(self.data) - self.sequence_length + 1):
+        i = 0
+        while i <= len(self.data) - self.sequence_length:
             # Vérifie que toutes les frames appartiennent à la même vidéo
             video_names = self.data.iloc[i : i + self.sequence_length][
                 "video_name"
             ].unique()
             if len(video_names) == 1:
                 valid_indices.append(i)
+            i += self.sequence_length // 2
         return valid_indices
 
     def __len__(self):
