@@ -23,6 +23,15 @@ def validate_model(model, val_dataloader, criterion, device):
 
     # Calculation of metrics
     mae = mean_absolute_error(val_targets, val_preds)
+    pearson = pearson_corrcoef(val_targets, val_preds)
     r2 = r2_score(val_targets, val_preds)
 
-    return val_loss, mae, r2, attention_maps
+    return val_loss, mae, pearson, r2, attention_maps
+
+
+def pearson_corrcoef(y_pred, y_true):
+    x = y_pred - y_pred.mean()
+    y = y_true - y_true.mean()
+    return torch.sum(x * y) / (
+        torch.sqrt(torch.sum(x**2)) * torch.sqrt(torch.sum(y**2))
+    )

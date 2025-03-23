@@ -58,10 +58,11 @@ def train_model(
             print("NaN détecté dans les cibles ou les prédictions !")
         print(train_preds)
         train_mae = mean_absolute_error(train_targets, train_preds)
+        train_pearson = pearson_corrcoef(train_targets, train_preds)
         train_r2 = r2_score(train_targets, train_preds)
 
         # Validation
-        val_loss, val_mae, val_r2, attention_maps = validate_model(
+        val_loss, val_mae, val_pearson, val_r2, attention_maps_val = validate_model(
             model, val_dataloader, criterion, device
         )
 
@@ -70,9 +71,11 @@ def train_model(
             "epoch": epoch + 1,
             "train_loss": train_loss / len(train_dataloader),
             "train_mae": train_mae,
+            "train_pearson": train_pearson,
             "train_r2": train_r2,
             "val_loss": val_loss / len(val_dataloader),
             "val_mae": val_mae,
+            "val_pearson": val_pearson,
             "val_r2": val_r2,
         }
         training_log.append(epoch_results)
@@ -98,8 +101,16 @@ def train_model(
     filtered_ppg = bandpass_filter(train_preds, fs=30)
     plotPpgSignal(plots_path, train_targets, train_preds, filtered_ppg)
 
-    plot_attention_maps(plots_path, attention_maps)
+    plot_attention_maps(plots_path, attention_maps_val)
 
     print(
         f"Training finished ! Best model of Job {job_id} saved with val_loss: {best_val_loss:.4f}"
+    )
+
+
+def pearson_corrcoef(y_pred, y_true):
+    x = y_pred - y_pred.mean()
+    y = y_true - y_true.mean()
+    return torch.sum(x * y) / (
+        torch.sqrt(torch.sum(x**2)) * torch.sqrt(torch.sum(y**2))
     )
