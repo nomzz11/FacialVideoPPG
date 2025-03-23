@@ -140,9 +140,11 @@ class FacialVideoDataset(Dataset):
                     image = self.transform(image)
                 frames.append(image)
                 ppg_values.append(row["ppg_value"])
+                video_name = row["video_name"]
 
                 if pd.isna(row["ppg_value"]):
                     print(
                         f"NaN détecté pour {row['video_name']} à la frame {row['frame_name']}"
                     )
-        return torch.stack(frames), torch.tensor(ppg_values), video_folder
+        print(video_name)
+        return torch.stack(frames), torch.tensor(ppg_values), video_name
