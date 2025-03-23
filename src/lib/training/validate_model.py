@@ -13,6 +13,7 @@ def validate_model(model, val_dataloader, criterion, seq_len, device):
             if frames is None or ppg_values is None:
                 continue
             frames, ppg_values = frames.to(device), ppg_values.to(device).float()
+            frames = frames.permute(0, 2, 1, 3, 4)
             outputs, attention_maps = model(frames, seq_len=seq_len)
             outputs = outputs.squeeze()
             loss = criterion(outputs, ppg_values)

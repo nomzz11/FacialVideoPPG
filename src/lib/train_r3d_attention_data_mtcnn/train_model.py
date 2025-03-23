@@ -36,7 +36,7 @@ def train_model(
         # Training Loop
         for frames, ppg_signal in train_dataloader:
             frames, ppg_signal = frames.to(device), ppg_signal.to(device).float()
-            # frames = frames.permute(0, 2, 1, 3, 4)
+            frames = frames.permute(0, 2, 1, 3, 4)
             optimizer.zero_grad()
             predictions, attention_maps = model(frames, seq_len=seq_len)
             predictions = predictions.squeeze()
