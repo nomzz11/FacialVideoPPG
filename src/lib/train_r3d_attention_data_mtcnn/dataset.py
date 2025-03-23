@@ -115,7 +115,7 @@ class FacialVideoDataset(Dataset):
             ].unique()
             if len(video_names) == 1:
                 valid_indices.append(i)
-            i += self.sequence_length // 2
+            i += self.sequence_length
         return valid_indices
 
     def __len__(self):
