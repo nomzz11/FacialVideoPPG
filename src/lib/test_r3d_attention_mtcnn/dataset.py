@@ -146,5 +146,4 @@ class FacialVideoDataset(Dataset):
                     print(
                         f"NaN détecté pour {row['video_name']} à la frame {row['frame_name']}"
                     )
-        print(video_name)
         return torch.stack(frames), torch.tensor(ppg_values), video_name
