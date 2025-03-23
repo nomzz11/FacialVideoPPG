@@ -29,7 +29,12 @@ def test_model(model, test_dataloader, criterion, save_dir, device, seq_len):
             for i, video_name in enumerate(videos_name):
                 if video_name not in video_predictions:
                     video_predictions[video_name] = []
-                video_predictions[video_name].extend(preds[i : i + 1].tolist())
+
+                # S'assurer que chaque vidéo récupère ses propres frames et pas celles des autres
+                pred_value = (
+                    preds[i] if len(preds.shape) > 0 else preds
+                )  # Gérer le cas où preds est scalaire
+                video_predictions[video_name].append(pred_value)
 
     # Calculation of metrics
     test_mae = mean_absolute_error(test_targets, test_preds)
