@@ -84,6 +84,93 @@ class r3d_transformer_without_attention_map(nn.Module):
         return x
 
 
+class ChannelAttention_maps(nn.Module):
+    def __init__(self, in_planes, ratio=16):
+        super(ChannelAttention_maps, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool3d(1)
+        self.max_pool = nn.AdaptiveMaxPool3d(1)
+        self.fc = nn.Sequential(
+            nn.Conv3d(in_planes, in_planes // ratio, 1, bias=False),
+            nn.ReLU(),
+            nn.Conv3d(in_planes // ratio, in_planes, 1, bias=False),
+        )
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        return x * self.sigmoid(avg_out + max_out)
+
+
+class SpatialAttention_maps(nn.Module):
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention_maps, self).__init__()
+        self.conv = nn.Conv3d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        avg_max_out = torch.cat([avg_out, max_out], dim=1)
+        attn = self.conv(avg_max_out)
+        attn_sigmoid = self.sigmoid(attn)
+        return x * attn_sigmoid
+
+
+class CBAM3D_maps(nn.Module):
+    def __init__(self, in_planes):
+        super(CBAM3D_maps, self).__init__()
+        self.ca = ChannelAttention_maps(in_planes)
+        self.sa = SpatialAttention_maps()
+
+    def forward(self, x):
+        x = self.ca(x)
+        x = self.sa(x)
+        attention_map = torch.mean(x, dim=1, keepdim=True)
+        return x, attention_map
+
+
+class r3d_transformer(nn.Module):
+    def __init__(self):
+        super(r3d_transformer, self).__init__()
+        self.backbone = r3d_18(pretrained=True)
+
+        # Ajout du CBAM3D aux couches ResNet3D
+        self.cbam1 = CBAM3D_maps(64)
+        self.cbam2 = CBAM3D_maps(128)
+
+        self.backbone.layer1 = nn.Sequential(self.backbone.layer1, self.cbam1)
+        self.backbone.layer2 = nn.Sequential(self.backbone.layer2, self.cbam2)
+
+        self.backbone.fc = nn.Identity()
+        self.fc = nn.Linear(512, 3)
+
+    def forward(self, x):
+        attention_maps = {}
+
+        # Passage dans la couche 1 + CBAM3D
+        x = self.backbone.stem(x)
+        x = self.backbone.layer1[0](x)  # RésNet3D layer1
+        x, attn1 = self.cbam1(x)  # CBAM3D de layer1
+        attention_maps["layer1"] = attn1
+
+        # Passage dans la couche 2 + CBAM3D
+        x = self.backbone.layer2[0](x)  # RésNet3D layer2
+        x, attn2 = self.cbam2(x)  # CBAM3D de layer2
+        attention_maps["layer2"] = attn2
+
+        # Passage dans les couches finales de ResNet3D
+        x = self.backbone.layer3(x)
+        x = self.backbone.layer4(x)
+        x = self.backbone.avgpool(x)
+        x = torch.flatten(x, 1)
+
+        # Prédiction finale
+        x = self.fc(x)
+
+        return x, attention_maps
+
+
 # Initialisation du détecteur de visages MTCNN
 mtcnn = MTCNN(
     select_largest=True,
@@ -270,7 +357,13 @@ def predict_ppg(model, frames, device="cuda"):
         for i in range(0, num_groups, BATCH_SIZE):
             batch = face_tensors[i : i + BATCH_SIZE].to(device)
             with torch.no_grad():
-                predictions = model(batch)
+                outputs = model(batch)
+                if isinstance(outputs, tuple) and len(outputs) == 2:
+                    predictions, attention_maps = outputs
+                else:
+                    print(len(outputs))
+                    predictions = outputs
+                    attention_maps = None
                 all_predictions.append(predictions.cpu())
 
         if not all_predictions:
@@ -352,47 +445,128 @@ def process_video(video_path, model, device="cuda"):
         return os.path.basename(video_path), [], None
 
 
-def main(video_folder, model_path, output_csv):
+def process_video_from_frames(frames_dir, model, device="cuda"):
     """
-    Fonction principale pour traiter toutes les vidéos d'un dossier.
+    Traite les frames d'un dossier pour estimer la fréquence cardiaque.
+
+    Args:
+        frames_dir (str): Chemin vers le dossier contenant les frames
+        model: Modèle de prédiction
+        device (str): Device pour l'inférence ("cuda" ou "cpu")
+
+    Returns:
+        tuple: (nom_dossier, signal_ppg, bpm)
+    """
+    try:
+        print(f"Traitement des frames du dossier: {frames_dir}")
+
+        # Chargement des frames depuis le dossier
+        frames = []
+        frame_files = sorted(
+            [f for f in os.listdir(frames_dir) if f.endswith((".jpg", ".jpeg", ".png"))]
+        )
+
+        if not frame_files:
+            print(f"Aucune image trouvée dans {frames_dir}")
+            return os.path.basename(frames_dir), [], None
+
+        for frame_file in frame_files:
+            frame_path = os.path.join(frames_dir, frame_file)
+            # Charger l'image directement (pas besoin de detect_faces si les frames sont déjà traitées)
+            frame = cv2.imread(frame_path)
+            if frame is not None:
+                frames.append(frame)
+
+        if len(frames) == 0:
+            print(f"Aucune frame valide chargée depuis {frames_dir}")
+            return os.path.basename(frames_dir), [], None
+
+        print(f"Nombre total de frames chargées: {len(frames)}")
+
+        # Si vos frames ne sont pas déjà des visages détectés,
+        # vous pouvez appliquer la détection de visage ici
+        # face_frames = []
+        # for frame in frames:
+        #     face = detect_face_in_frame(frame)  # Vous devrez implémenter cette fonction
+        #     if face is not None:
+        #         face_frames.append(face)
+        # frames = face_frames
+
+        # Prédiction du signal PPG
+        ppg_signal = predict_ppg(model, frames, device)
+
+        if len(ppg_signal) == 0:
+            print(f"Échec de la génération du signal PPG pour {frames_dir}")
+            return os.path.basename(frames_dir), [], None
+
+        # Estimation de la fréquence cardiaque
+        bpm = estimate_heart_rate(ppg_signal)
+
+        # Retourner les résultats
+        dir_name = os.path.basename(frames_dir)
+        return dir_name, ppg_signal, bpm
+
+    except Exception as e:
+        print(f"Erreur lors du traitement des frames du dossier {frames_dir}: {e}")
+        import traceback
+
+        traceback.print_exc()  # Afficher la stack trace pour le débogage
+        return os.path.basename(frames_dir), [], None
+
+
+def main(frames_root_folder, model_path, output_csv):
+    """
+    Fonction principale pour traiter tous les dossiers de frames.
+
+    Args:
+        frames_root_folder (str): Dossier racine contenant les sous-dossiers de frames
+        model_path (str): Chemin vers le modèle pré-entraîné
+        output_csv (str): Chemin pour sauvegarder les résultats CSV
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Utilisation du dispositif: {device}")
 
     # Chargement du modèle
-    model = r3d_transformer_without_attention_map().to(device)
+    model = r3d_transformer().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
-    # Liste des vidéos à traiter
-    videos = [
-        f for f in os.listdir(video_folder) if f.endswith((".mp4", ".avi", ".mov"))
+    # Liste des dossiers de frames à traiter
+    frame_folders = [
+        d
+        for d in os.listdir(frames_root_folder)
+        if os.path.isdir(os.path.join(frames_root_folder, d))
     ]
-    print(f"Nombre de vidéos à traiter: {len(videos)}")
+    print(f"Nombre de séquences de frames à traiter: {len(frame_folders)}")
 
     results = {}
     max_length = 0
 
-    # Traitement de chaque vidéo
-    for video in videos:
-        video_path = os.path.join(video_folder, video)
+    # Traitement de chaque dossier de frames
+    for folder in frame_folders:
+        folder_path = os.path.join(frames_root_folder, folder)
 
         try:
-            video_name, ppg_signal, bpm = process_video(video_path, model, device)
+            folder_name, ppg_signal, bpm = process_video_from_frames(
+                folder_path, model, device
+            )
 
             if len(ppg_signal) > 0:
-                print(f"Vidéo {video_name} traitée avec succès. BPM: {bpm}")
+                print(f"Séquence {folder_name} traitée avec succès. BPM: {bpm}")
                 # Ajouter le BPM à la fin du signal PPG
-                results[video_name] = (
+                results[folder_name] = (
                     list(ppg_signal) + [bpm]
                     if bpm is not None
                     else list(ppg_signal) + [None]
                 )
-                max_length = max(max_length, len(results[video_name]))
+                max_length = max(max_length, len(results[folder_name]))
             else:
-                print(f"Vidéo {video_name} ignorée: aucun signal PPG valide")
+                print(f"Séquence {folder_name} ignorée: aucun signal PPG valide")
         except Exception as e:
-            print(f"Erreur lors du traitement de {video}: {e}")
+            print(f"Erreur lors du traitement du dossier {folder}: {e}")
+            import traceback
+
+            traceback.print_exc()  # Pour obtenir plus de détails sur l'erreur
 
     # Égaliser la longueur des résultats
     for name in results:
@@ -408,11 +582,13 @@ def main(video_folder, model_path, output_csv):
 if __name__ == "__main__":
     # Configuration des chemins
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    video_folder = os.path.join(project_root, "data")  # Dossier contenant les vidéos
+    frames_root_folder = os.path.join(
+        project_root, "data_mtcnn"
+    )  # Dossier contenant les sous-dossiers de frames
     model_path = os.path.join(
-        project_root, "experiments/0011/best_model.pth"
+        project_root, "experiments/0017/best_model.pth"
     )  # Chemin du modèle pré-entraîné
     output_csv = os.path.join(project_root, "results.csv")  # Fichier de sortie CSV
 
     # Exécution du traitement
-    main(video_folder, model_path, output_csv)
+    main(frames_root_folder, model_path, output_csv)
