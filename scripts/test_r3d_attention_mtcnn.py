@@ -77,7 +77,10 @@ if __name__ == "__main__":
     df = pd.DataFrame.from_dict(df_dict, orient="index").transpose()
 
     # Ajout des BPM estimés à partir des prédictions
-    df.loc["BPM"] = pd.Series(bpm_results)
+    bpm_df = pd.DataFrame([bpm_results], index=["BPM"])
+
+    # Concaténation du DataFrame des prédictions et des BPM
+    df = pd.concat([df, bpm_df])
 
     # Définition du chemin de sauvegarde
     csv_path = os.path.join(save_path, "video_predictions.csv")
