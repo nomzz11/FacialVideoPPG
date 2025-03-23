@@ -22,7 +22,14 @@ def add_hr_targets_to_predictions(
         output_csv_path = predictions_csv_path
 
     # Obtenir la liste unique des noms de vidéos
-    video_names = df_predictions.iloc[0].tolist()
+    # Lire le fichier CSV ligne par ligne
+    with open(predictions_csv_path, "r") as file:
+        lines = file.readlines()
+
+    if len(lines) < 2:
+        raise ValueError("Le fichier CSV doit contenir au moins deux lignes")
+
+    video_names = lines[0].strip().split(",")
     unique_videos = list(set(video_names))
     print(f"Nombre de vidéos uniques dans le CSV: {len(unique_videos)}")
 
