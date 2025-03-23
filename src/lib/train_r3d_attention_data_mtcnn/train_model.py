@@ -1,4 +1,4 @@
-import os, torch, json
+import os, torch, json, numpy as np
 from sklearn.metrics import mean_absolute_error, r2_score
 from src.lib.training.validate_model import validate_model
 from src.lib.training.plot_ppg_signal import plotPpgSignal
@@ -60,7 +60,7 @@ def train_model(
             print("NaN détecté dans les cibles ou les prédictions !")
         print(train_preds)
         train_mae = mean_absolute_error(train_targets, train_preds)
-        train_pearson = pearson_corrcoef(train_targets, train_preds)
+        train_pearson = np.float64(pearson_corrcoef(train_targets, train_preds))
         train_r2 = r2_score(train_targets, train_preds)
 
         # Validation
@@ -85,8 +85,10 @@ def train_model(
         print(
             f"[Job {job_id}] Epoch {epoch+1}/{epochs}: Train Loss: {epoch_results['train_loss']:.4f}, Val Loss: {epoch_results['val_loss']:.4f}"
         )
-        print(f"Train MAE: {train_mae:.4f}, Train R²: {train_r2:.4f}")
-        print(f"Val MAE: {val_mae:.4f}, Val R²: {val_r2:.4f}")
+        print(
+            f"Train MAE: {train_mae:.4f}, Train R²: {train_r2:.4f}, Train R: {train_pearson:.4f}"
+        )
+        print(f"Val MAE: {val_mae:.4f}, Val R²: {val_r2:.4f}, Val R: {val_pearson:.4f}")
 
         # Save the model if the validation is better
         if val_loss < best_val_loss:
@@ -111,8 +113,12 @@ def train_model(
 
 
 def pearson_corrcoef(y_pred, y_true):
+    y_pred = torch.tensor(y_pred) if isinstance(y_pred, list) else y_pred
+    y_true = torch.tensor(y_true) if isinstance(y_true, list) else y_true
+
     x = y_pred - y_pred.mean()
     y = y_true - y_true.mean()
+
     return torch.sum(x * y) / (
         torch.sqrt(torch.sum(x**2)) * torch.sqrt(torch.sum(y**2))
     )
