@@ -50,7 +50,9 @@ if __name__ == "__main__":
 
     dataset = FacialVideoDataset
     train_dataset, val_dataset, test_dataset = split_dataset(
-        dataset, split_strategy=cli_options["split_strategy"]
+        dataset,
+        split_strategy=cli_options["split_strategy"],
+        seq_len=cli_options["seq_len"],
     )
     train_dataloader, val_dataloader, test_dataloader = dataloader(
         train_dataset, val_dataset, test_dataset, cli_options["batch_size"]
@@ -96,8 +98,8 @@ if __name__ == "__main__":
         criterion,
         optimizer,
         save_path,
-        epochs=cli_options["epochs"],
         seq_len=cli_options["seq_len"],
+        epochs=cli_options["epochs"],
         gpu=cli_options["gpu"],
     )
 

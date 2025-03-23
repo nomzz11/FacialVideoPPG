@@ -10,10 +10,10 @@ class FacialVideoDataset(Dataset):
     def __init__(
         self,
         data_dir,
+        sequence_length,
         split="train",
         split_strategy="video_length",
         transform=None,
-        sequence_length=64,
         seed=42,
     ):
         if split_strategy not in ["video_length", "video_count"]:
@@ -145,4 +145,5 @@ class FacialVideoDataset(Dataset):
                     print(
                         f"NaN détecté pour {row['video_name']} à la frame {row['frame_name']}"
                     )
+        print(ppg_values)
         return torch.stack(frames), torch.tensor(ppg_values)

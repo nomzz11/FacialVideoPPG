@@ -13,9 +13,9 @@ def train_model(
     criterion,
     optimizer,
     save_dir,
+    seq_len,
     gpu=0,
     epochs=10,
-    seq_len=64,
     device="cuda:0",
 ):
     job_id = os.path.basename(save_dir)
