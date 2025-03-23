@@ -22,7 +22,8 @@ def add_hr_targets_to_predictions(
         output_csv_path = predictions_csv_path
 
     # Obtenir la liste unique des noms de vidéos
-    unique_videos = df_predictions["video_name"].unique()
+    video_names = df_predictions.iloc[0].tolist()
+    unique_videos = list(set(video_names))
     print(f"Nombre de vidéos uniques dans le CSV: {len(unique_videos)}")
 
     # Dictionnaire pour stocker les moyennes HR par vidéo
@@ -77,8 +78,13 @@ def add_hr_targets_to_predictions(
         except Exception as e:
             print(f"Erreur lors du traitement du fichier {json_path}: {e}")
 
-    # Ajouter une colonne HR target au DataFrame
-    df_predictions["hr_target"] = df_predictions["video_name"].map(video_hr_means)
+    # Créer une nouvelle ligne pour les valeurs HR cibles
+    hr_targets = []
+    for video_name in video_names:
+        hr_targets.append(video_hr_means.get(video_name, np.nan))
+
+    # Ajouter la ligne des HR cibles au DataFrame
+    df_predictions.loc[len(df_predictions)] = hr_targets
 
     # Vérifier combien de vidéos ont reçu une valeur HR cible
     videos_with_hr = sum(1 for v in unique_videos if v in video_hr_means)
