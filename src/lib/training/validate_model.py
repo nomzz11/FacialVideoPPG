@@ -1,4 +1,4 @@
-import torch
+import torch, numpy as np
 from sklearn.metrics import mean_absolute_error, r2_score
 
 
@@ -24,15 +24,19 @@ def validate_model(model, val_dataloader, criterion, seq_len, device):
 
     # Calculation of metrics
     mae = mean_absolute_error(val_targets, val_preds)
-    pearson = pearson_corrcoef(val_targets, val_preds)
+    pearson = np.float64(pearson_corrcoef(val_targets, val_preds))
     r2 = r2_score(val_targets, val_preds)
 
     return val_loss, mae, pearson, r2, attention_maps
 
 
 def pearson_corrcoef(y_pred, y_true):
+    y_pred = torch.tensor(y_pred) if isinstance(y_pred, list) else y_pred
+    y_true = torch.tensor(y_true) if isinstance(y_true, list) else y_true
+
     x = y_pred - y_pred.mean()
     y = y_true - y_true.mean()
+
     return torch.sum(x * y) / (
         torch.sqrt(torch.sum(x**2)) * torch.sqrt(torch.sum(y**2))
     )
