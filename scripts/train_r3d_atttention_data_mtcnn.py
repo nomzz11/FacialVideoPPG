@@ -97,6 +97,7 @@ if __name__ == "__main__":
         optimizer,
         save_path,
         epochs=cli_options["epochs"],
+        seq_len=cli_options["seq_len"],
         gpu=cli_options["gpu"],
     )
 
@@ -109,6 +110,7 @@ if __name__ == "__main__":
         "loss_function": cli_options["loss"],
         "optimizer": "Adam",
         "dataset_split_strategy": cli_options["split_strategy"],
+        "seq_len": cli_options["seq_len"],
         "batch_size": train_dataloader.batch_size,
     }
 

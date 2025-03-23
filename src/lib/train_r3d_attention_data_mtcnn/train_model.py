@@ -15,6 +15,7 @@ def train_model(
     save_dir,
     gpu=0,
     epochs=10,
+    seq_len=64,
     device="cuda:0",
 ):
     job_id = os.path.basename(save_dir)
@@ -35,8 +36,9 @@ def train_model(
         # Training Loop
         for frames, ppg_signal in train_dataloader:
             frames, ppg_signal = frames.to(device), ppg_signal.to(device).float()
+            frames = frames.permute(0, 2, 1, 3, 4)
             optimizer.zero_grad()
-            predictions, attention_maps = model(frames)
+            predictions, attention_maps = model(frames, seq_len=seq_len)
             predictions = predictions.squeeze()
             loss = criterion(predictions, ppg_signal)
             loss.backward()
@@ -63,7 +65,7 @@ def train_model(
 
         # Validation
         val_loss, val_mae, val_pearson, val_r2, attention_maps_val = validate_model(
-            model, val_dataloader, criterion, device
+            model, val_dataloader, criterion, seq_len, device
         )
 
         # Storing results

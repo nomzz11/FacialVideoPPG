@@ -13,7 +13,7 @@ class FacialVideoDataset(Dataset):
         split="train",
         split_strategy="video_length",
         transform=None,
-        sequence_length=3,
+        sequence_length=64,
         seed=42,
     ):
         if split_strategy not in ["video_length", "video_count"]:

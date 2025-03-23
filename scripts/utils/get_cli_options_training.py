@@ -35,5 +35,6 @@ def get_cli_options_training():
         default="mse",
         help="loss",
     )
+    parser.add_argument("--seq_len", type=int, default=64, help="seq_len")
     args = parser.parse_args()
     return vars(args)

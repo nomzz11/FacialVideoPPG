@@ -51,7 +51,7 @@ class CBAM3D(nn.Module):
 
 
 class r3d_transformer(nn.Module):
-    def __init__(self):
+    def __init__(self, out_features=64):
         super(r3d_transformer, self).__init__()
         # Chargement du backbone R3D-18 pré-entraîné
         r3d = r3d_18(pretrained=True)
@@ -69,9 +69,9 @@ class r3d_transformer(nn.Module):
         self.cbam2 = CBAM3D(128)  # 128 canaux après layer2
 
         # Couche finale
-        self.fc = nn.Linear(512, 3)
+        self.fc = nn.Linear(512, out_features)
 
-    def forward(self, x):
+    def forward(self, x, seq_len=None):
         attention_maps = {}
 
         # Passage à travers le stem

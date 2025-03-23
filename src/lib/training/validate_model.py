@@ -2,7 +2,7 @@ import torch
 from sklearn.metrics import mean_absolute_error, r2_score
 
 
-def validate_model(model, val_dataloader, criterion, device):
+def validate_model(model, val_dataloader, criterion, seq_len, device):
     model.eval()
     val_loss = 0.0
     val_preds, val_targets = [], []
@@ -13,7 +13,7 @@ def validate_model(model, val_dataloader, criterion, device):
             if frames is None or ppg_values is None:
                 continue
             frames, ppg_values = frames.to(device), ppg_values.to(device).float()
-            outputs, attention_maps = model(frames)
+            outputs, attention_maps = model(frames, seq_len=seq_len)
             outputs = outputs.squeeze()
             loss = criterion(outputs, ppg_values)
             val_loss += loss.item()
