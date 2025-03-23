@@ -131,41 +131,49 @@ class CBAM3D_maps(nn.Module):
 
 
 class r3d_transformer(nn.Module):
-    def __init__(self):
+    def __init__(self, out_features=60):
         super(r3d_transformer, self).__init__()
-        self.backbone = r3d_18(pretrained=True)
+        # Chargement du backbone R3D-18 pré-entraîné
+        r3d = r3d_18(pretrained=True)
 
-        # Ajout du CBAM3D aux couches ResNet3D
-        self.cbam1 = CBAM3D_maps(64)
-        self.cbam2 = CBAM3D_maps(128)
+        # Extraction des couches individuelles
+        self.stem = r3d.stem
+        self.layer1 = r3d.layer1  # Gardons les layers séparés
+        self.layer2 = r3d.layer2
+        self.layer3 = r3d.layer3
+        self.layer4 = r3d.layer4
+        self.avgpool = r3d.avgpool
 
-        self.backbone.layer1 = nn.Sequential(self.backbone.layer1, self.cbam1)
-        self.backbone.layer2 = nn.Sequential(self.backbone.layer2, self.cbam2)
+        # Ajout des modules CBAM3D
+        self.cbam1 = CBAM3D_maps(64)  # 64 canaux après layer1
+        self.cbam2 = CBAM3D_maps(128)  # 128 canaux après layer2
 
-        self.backbone.fc = nn.Identity()
-        self.fc = nn.Linear(512, 3)
+        # Couche finale
+        self.fc = nn.Linear(512, out_features)
 
-    def forward(self, x):
+    def forward(self, x, seq_len=None):
         attention_maps = {}
 
-        # Passage dans la couche 1 + CBAM3D
-        x = self.backbone.stem(x)
-        x = self.backbone.layer1[0](x)  # RésNet3D layer1
-        x, attn1 = self.cbam1(x)  # CBAM3D de layer1
+        # Passage à travers le stem
+        x = self.stem(x)
+
+        # Layer 1 + CBAM
+        x = self.layer1(x)
+        x, attn1 = self.cbam1(x)
         attention_maps["layer1"] = attn1
 
-        # Passage dans la couche 2 + CBAM3D
-        x = self.backbone.layer2[0](x)  # RésNet3D layer2
-        x, attn2 = self.cbam2(x)  # CBAM3D de layer2
+        # Layer 2 + CBAM
+        x = self.layer2(x)
+        x, attn2 = self.cbam2(x)
         attention_maps["layer2"] = attn2
 
-        # Passage dans les couches finales de ResNet3D
-        x = self.backbone.layer3(x)
-        x = self.backbone.layer4(x)
-        x = self.backbone.avgpool(x)
+        # Couches restantes sans attention
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
-        # Prédiction finale
+        # Classification finale
         x = self.fc(x)
 
         return x, attention_maps
@@ -338,18 +346,18 @@ def predict_ppg(model, frames, device="cuda"):
 
         # Gestion des groupes de 3 frames
         num_frames = face_tensors.shape[0]
-        remainder = num_frames % 3
+        remainder = num_frames % 60
 
         # Ajout de padding si nécessaire
         if remainder != 0:
-            missing = 3 - remainder
+            missing = 60 - remainder
             padding = face_tensors[-1:].repeat(missing, 1, 1, 1)
             face_tensors = torch.cat([face_tensors, padding], dim=0)
 
-        num_groups = face_tensors.shape[0] // 3
+        num_groups = face_tensors.shape[0] // 60
 
         # Restructuration pour le modèle 3D
-        face_tensors = face_tensors.view(num_groups, 3, 3, 112, 112)
+        face_tensors = face_tensors.view(num_groups, 3, 60, 112, 112)
 
         # Traitement par lots pour économiser la mémoire
         all_predictions = []
@@ -357,7 +365,7 @@ def predict_ppg(model, frames, device="cuda"):
         for i in range(0, num_groups, BATCH_SIZE):
             batch = face_tensors[i : i + BATCH_SIZE].to(device)
             with torch.no_grad():
-                outputs = model(batch)
+                outputs = model(batch, seq_len=60)
                 if isinstance(outputs, tuple) and len(outputs) == 2:
                     predictions, attention_maps = outputs
                 else:
@@ -586,7 +594,7 @@ if __name__ == "__main__":
         project_root, "data_mtcnn"
     )  # Dossier contenant les sous-dossiers de frames
     model_path = os.path.join(
-        project_root, "experiments/0017/best_model.pth"
+        project_root, "experiments/0020/best_model.pth"
     )  # Chemin du modèle pré-entraîné
     output_csv = os.path.join(project_root, "results.csv")  # Fichier de sortie CSV
 
