@@ -51,7 +51,7 @@ class CBAM3D(nn.Module):
 
 
 class r3d_transformer(nn.Module):
-    def __init__(self, out_features=64):
+    def __init__(self, out_features):
         super(r3d_transformer, self).__init__()
         # Chargement du backbone R3D-18 pré-entraîné
         r3d = r3d_18(pretrained=True)
