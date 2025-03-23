@@ -12,13 +12,16 @@ mp.set_start_method("spawn", force=True)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from scripts.utils import get_cli_options_test
-from src.lib.test_r3d_attention_mtcnn import test_model, FacialVideoDataset
+from src.lib.test_r3d_attention_mtcnn import (
+    test_model,
+    FacialVideoDataset,
+    estimate_heart_rate,
+)
 from src.lib.train_r3d_attention_data_mtcnn import (
     split_dataset,
     dataloader,
 )
 from src.lib.training_cnn3d_transformer import r3d_transformer, PearsonLoss
-from src.lib.pipeline_video.estimate_heart_rate import estimate_heart_rate
 
 
 if __name__ == "__main__":
