@@ -46,7 +46,6 @@ if __name__ == "__main__":
         split_strategy="video_count",
         seq_len=cli_options["seq_len"],
     )
-    print(len(test_dataset))
     train_dataloader, val_dataloader, test_dataloader = dataloader(
         train_dataset, val_dataset, test_dataset, cli_options["batch_size"]
     )
