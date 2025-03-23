@@ -115,11 +115,11 @@ def add_hr_targets_to_predictions(
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 predictions_csv_path = os.path.join(
-    project_root, "experiments/0020/video_predictions.csv"
+    project_root, "experiments/0021/video_predictions.csv"
 )
 json_directory = os.path.join(project_root, "data")
 output_csv_path = os.path.join(
-    project_root, "experiments/0020/video_predictions_with_hr.csv"
+    project_root, "experiments/0021/video_predictions_with_hr.csv"
 )
 
 df_enriched = add_hr_targets_to_predictions(
