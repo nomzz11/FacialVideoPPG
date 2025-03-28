@@ -2,6 +2,7 @@
 __pycache__
 data
 refined_data
+data_mtcnn
 experiments
 stats
 plotsHR

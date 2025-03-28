@@ -19,7 +19,8 @@ class ChannelAttention(nn.Module):
     def forward(self, x):
         avg_out = self.fc(self.avg_pool(x))
         max_out = self.fc(self.max_pool(x))
-        return x * self.sigmoid(avg_out + max_out)
+        out = self.sigmoid(avg_out + max_out)
+        return x * out, out  # Retourne aussi la carte d'attention
 
 
 class SpatialAttention(nn.Module):
@@ -34,7 +35,7 @@ class SpatialAttention(nn.Module):
         avg_max_out = torch.cat([avg_out, max_out], dim=1)
         attn = self.conv(avg_max_out)
         attn_sigmoid = self.sigmoid(attn)
-        return x * attn_sigmoid
+        return x * attn_sigmoid, attn_sigmoid
 
 
 class CBAM3D(nn.Module):
@@ -44,48 +45,55 @@ class CBAM3D(nn.Module):
         self.sa = SpatialAttention()
 
     def forward(self, x):
-        x = self.ca(x)
-        x = self.sa(x)
-        attention_map = torch.mean(x, dim=1, keepdim=True)
-        return x, attention_map
+        x, ca_attention = self.ca(x)
+        x, sa_attention = self.sa(x)
+        return x, sa_attention
 
 
 class r3d_transformer(nn.Module):
-    def __init__(self):
+    def __init__(self, out_features=60):
         super(r3d_transformer, self).__init__()
-        self.backbone = r3d_18(pretrained=True)
+        # Chargement du backbone R3D-18 pré-entraîné
+        r3d = r3d_18(pretrained=True)
 
-        # Ajout du CBAM3D aux couches ResNet3D
-        self.cbam1 = CBAM3D(64)
-        self.cbam2 = CBAM3D(128)
+        # Extraction des couches individuelles
+        self.stem = r3d.stem
+        self.layer1 = r3d.layer1  # Gardons les layers séparés
+        self.layer2 = r3d.layer2
+        self.layer3 = r3d.layer3
+        self.layer4 = r3d.layer4
+        self.avgpool = r3d.avgpool
 
-        self.backbone.layer1 = nn.Sequential(self.backbone.layer1, self.cbam1)
-        self.backbone.layer2 = nn.Sequential(self.backbone.layer2, self.cbam2)
+        # Ajout des modules CBAM3D
+        self.cbam1 = CBAM3D(64)  # 64 canaux après layer1
+        self.cbam2 = CBAM3D(128)  # 128 canaux après layer2
 
-        self.backbone.fc = nn.Identity()
-        self.fc = nn.Linear(512, 3)
+        # Couche finale
+        self.fc = nn.Linear(512, out_features)
 
-    def forward(self, x):
+    def forward(self, x, seq_len=None):
         attention_maps = {}
 
-        # Passage dans la couche 1 + CBAM3D
-        x = self.backbone.stem(x)
-        x = self.backbone.layer1[0](x)  # RésNet3D layer1
-        x, attn1 = self.cbam1(x)  # CBAM3D de layer1
+        # Passage à travers le stem
+        x = self.stem(x)
+
+        # Layer 1 + CBAM
+        x = self.layer1(x)
+        x, attn1 = self.cbam1(x)
         attention_maps["layer1"] = attn1
 
-        # Passage dans la couche 2 + CBAM3D
-        x = self.backbone.layer2[0](x)  # RésNet3D layer2
-        x, attn2 = self.cbam2(x)  # CBAM3D de layer2
+        # Layer 2 + CBAM
+        x = self.layer2(x)
+        x, attn2 = self.cbam2(x)
         attention_maps["layer2"] = attn2
 
-        # Passage dans les couches finales de ResNet3D
-        x = self.backbone.layer3(x)
-        x = self.backbone.layer4(x)
-        x = self.backbone.avgpool(x)
+        # Couches restantes sans attention
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
-        # Prédiction finale
+        # Classification finale
         x = self.fc(x)
 
         return x, attention_maps

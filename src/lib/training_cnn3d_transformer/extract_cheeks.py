@@ -1,66 +1,132 @@
-import cv2
 import torch
 import numpy as np
-from facenet_pytorch import MTCNN
+import os
 from PIL import Image
+import cv2
+from facenet_pytorch import MTCNN
 
+# Initialisation du détecteur de visages MTCNN
 mtcnn = MTCNN(
-    select_largest=True, device="cuda" if torch.cuda.is_available() else "cpu"
+    select_largest=True,
+    device="cuda" if torch.cuda.is_available() else "cpu",
 )
 
 
-def extract_cheeks(frame, output_size=112):
-    """
-    Détecte précisément les joues gauche et droite depuis une frame avec MTCNN.
-    Retourne une image carrée combinant les deux joues.
-    """
-    img_rgb = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    boxes, probs, landmarks = mtcnn.detect(img_rgb, landmarks=True)
+def normalize_image(image):
+    if not isinstance(image, np.ndarray):
+        image = np.array(image).astype(np.float32) / 255.0
+    mean = np.mean(image, axis=(0, 1))
+    std = np.std(image, axis=(0, 1)) + 1e-8  # Évite division par zéro
+    normalized_image = (image - mean) / std
+    return Image.fromarray((normalized_image * 255).astype(np.uint8))
 
-    if landmarks is None or len(landmarks) == 0:
-        print("Aucun visage détecté")
+
+def apply_clahe(image, clip_limit=2.0, grid_size=(8, 8)):
+    """
+    Applique CLAHE (Correction de contraste adaptative) pour améliorer la détection faciale
+    sur tout type de peau sans distorsion excessive.
+
+    Args:
+        image (numpy.ndarray): Image BGR (OpenCV)
+        clip_limit (float): Intensité de la correction (plus élevé = plus de contraste)
+        grid_size (tuple): Taille de la grille pour le traitement adaptatif
+
+    Returns:
+        numpy.ndarray: Image améliorée en BGR
+    """
+    if not isinstance(image, np.ndarray):
+        image = np.array(image)
+
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)  # Conversion BGR → LAB
+    l, a, b = cv2.split(lab)  # Séparation des canaux
+
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=grid_size)
+    l = clahe.apply(l)  # Appliquer CLAHE sur la luminance
+
+    lab = cv2.merge((l, a, b))  # Fusionner les canaux
+    enhanced_image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)  # Retour en BGR
+
+    normalized_image = normalize_image(enhanced_image)
+    return normalized_image
+
+
+def extract_cheeks(frame_pil, frame_id, video_folder, output_size=112):
+    """
+    Détecte les joues dans une image et les renvoie sous forme d'une image carrée fusionnée.
+
+    Args:
+        frame_pil (PIL.Image): Image d'entrée au format PIL (RGB).
+        output_size (int): Taille de sortie du carré final.
+
+    Returns:
+        np.ndarray ou None: Image fusionnée des joues sous forme de tableau numpy (RGB) ou None si échec.
+    """
+
+    # frame_pil = apply_clahe(frame_pil)  # Appliquer avant MTCNN
+
+    print(f"extract_cheeks appelée pour frame {frame_id} de la video {video_folder}")
+
+    # Détection des visages avec MTCNN
+    boxes, probs, landmarks = mtcnn.detect(frame_pil, landmarks=True)
+
+    if landmarks is None:
+        print("Aucun visage détecté.")
+
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../..")
+        )
+        NO_FACE_DIR = os.path.join(project_root, "stats")
+
+        # Sauvegarde l'image si aucun visage détecté
+        if frame_id is not None:
+            save_path = os.path.join(NO_FACE_DIR, f"frame_{frame_id}.png")
+        else:
+            save_path = os.path.join(NO_FACE_DIR, "frame_unknown.png")
+
+        frame_pil.save(save_path)
+        print(f"Image sauvegardée : {save_path}")
+
         return None
 
-    landmarks = landmarks[0]
+    if landmarks is not None and len(landmarks) > 1:
+        # Calculer la surface de chaque boîte englobante (hauteur * largeur)
+        areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
-    # Landmarks précis pour joues
-    left_eye, right_eye, _, mouth_left, mouth_right = landmarks
+        # Trouver l'index du visage ayant la plus grande surface
+        largest_index = np.argmax(areas)
 
-    h, w, _ = frame.shape
+        # Sélectionner les landmarks du plus grand visage
+        selected_landmarks = landmarks[largest_index]
+    else:
+        selected_landmarks = landmarks[0] if landmarks is not None else None
 
-    # Joues Gauche
-    cheek_left_x1 = int(max(mouth_left[0] - 0.6 * abs(mouth_left[0] - left_eye[0]), 0))
-    cheek_left_x2 = int(mouth_left[0])
-    cheek_left_y1 = int(left_eye[1])
-    cheek_left_y2 = int(mouth_left[1] + 0.2 * abs(mouth_left[1] - left_eye[1]))
-    cheek_left_y2 = min(cheek_left_y2, h)
+    selected_landmarks = np.array(selected_landmarks)
+    left_eye, right_eye, nose, mouth_left, mouth_right = selected_landmarks
 
-    left_cheek = frame[cheek_left_y1:cheek_left_y2, cheek_left_x1:cheek_left_x2]
+    # Convertir l'image PIL en numpy pour OpenCV
+    frame = np.array(frame_pil)
 
-    # Joue Droite
-    cheek_right_x1 = int(mouth_right[0])
-    cheek_right_x2 = int(
-        min(mouth_right[0] + 0.6 * abs(right_eye[0] - mouth_right[0]), w)
-    )
-    cheek_right_y1 = int(right_eye[1])
-    cheek_right_y2 = int(mouth_right[1] + 0.2 * abs(mouth_right[1] - right_eye[1]))
-    cheek_right_y2 = min(cheek_right_y2, h)
+    # Définir les coordonnées des joues (approximatives)
+    x1_l, x2_l = sorted([int(left_eye[0] - 40), int(mouth_left[0])])
+    y1_l, y2_l = sorted([int(left_eye[1] + 40), int(mouth_left[1] + 40)])
 
-    right_cheek = frame[cheek_right_y1:cheek_right_y2, cheek_right_x1:cheek_right_x2]
+    x1_r, x2_r = sorted([int(right_eye[0] + 40), int(mouth_right[0])])
+    y1_r, y2_r = sorted([int(right_eye[1] + 40), int(mouth_right[1] + 40)])
 
-    # Vérification de la taille des joues
-    if left_cheek.size == 0 or right_cheek.size == 0:
-        print("Erreur extraction joues, vérifiez la détection des landmarks.")
+    cheek_left = frame[y1_l:y2_l, x1_l:x2_l]
+    cheek_right = frame[y1_r:y2_r, x1_r:x2_r]
+
+    if cheek_left.size == 0 or cheek_right.size == 0:
+        # Vérifier si les joues sont extraites
+        print(f"left_cheek: {cheek_left}, right_cheek: {cheek_right}")
+        print("Problème d'extraction des joues (taille 0).")
         return None
 
-    # Redimensionnement des joues
-    left_cheek_resized = cv2.resize(left_cheek, (output_size, output_size))
-    right_cheek_resized = cv2.resize(right_cheek, (output_size, output_size))
+    # Redimensionner chaque joue pour garantir un carré
+    cheek_left_resized = cv2.resize(cheek_left, (output_size // 2, output_size))
+    cheek_right_resized = cv2.resize(cheek_right, (output_size // 2, output_size))
 
-    # Combinaison claire des joues côte-à-côte
-    combined_cheeks = np.hstack((left_cheek_resized, right_cheek_resized))
+    # Fusionner les joues pour obtenir une image carrée
+    combined_cheeks = np.hstack((cheek_left_resized, cheek_right_resized))
 
-    # Redimension finale pour un carré parfait
-    combined_cheeks_square = cv2.resize(combined_cheeks, (output_size, output_size))
-
-    return combined_cheeks_square
+    return combined_cheeks

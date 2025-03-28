@@ -1,16 +1,18 @@
-import os, pandas as pd, numpy as np, cv2, torch
+import os
+import pandas as pd
+import torch
 from torch.utils.data import Dataset
-from facenet_pytorch import MTCNN
-from sklearn.model_selection import train_test_split
 from PIL import Image
+from sklearn.model_selection import train_test_split
 
 
 class FacialVideoDataset(Dataset):
     def __init__(
         self,
         data_dir,
+        sequence_length,
         split="train",
-        split_strategy="video_length",
+        split_strategy="video_count",
         transform=None,
         seed=42,
     ):
@@ -21,6 +23,7 @@ class FacialVideoDataset(Dataset):
         self.split = split
         self.split_strategy = split_strategy
         self.transform = transform
+        self.sequence_length = sequence_length
         self.seed = seed
 
         # Charger les métadonnées
@@ -31,6 +34,9 @@ class FacialVideoDataset(Dataset):
             self.data = self._split_by_video_length()
         else:
             self.data = self._split_by_video_count()
+
+        # Filtrer les indices valides (éviter les séquences incomplètes)
+        self.valid_indices = self._filter_valid_indices()
 
     def _load_metadata(self):
         """Charge les métadonnées depuis les CSV des vidéos"""
@@ -82,71 +88,62 @@ class FacialVideoDataset(Dataset):
             temp_videos, test_size=0.5, random_state=self.seed
         )
 
+        num_train = len(train_videos)
+        num_val = len(val_videos)
+        num_test = len(test_videos)
+
+        print(
+            f"Splits enregistrés : {num_train} train, {num_val} val, {num_test} test."
+        )
+
         split_videos = (
             train_videos
             if self.split == "train"
             else val_videos if self.split == "val" else test_videos
         )
+
         return self.metadata[self.metadata["video_name"].isin(split_videos)]
 
+    def _filter_valid_indices(self):
+        """Garde uniquement les indices où une séquence complète de `sequence_length` frames est disponible."""
+        valid_indices = []
+        i = 0
+        while i <= len(self.data) - self.sequence_length:
+            # Vérifie que toutes les frames appartiennent à la même vidéo
+            video_names = self.data.iloc[i : i + self.sequence_length][
+                "video_name"
+            ].unique()
+            if len(video_names) == 1:
+                valid_indices.append(i)
+            i += self.sequence_length // 2
+        return valid_indices
+
     def __len__(self):
-        return len(self.data)
+        return len(self.valid_indices)
 
     def __getitem__(self, idx):
-        from src.lib.training_cnn3d_transformer import extract_cheeks
+        start_idx = self.valid_indices[idx]  # Utilisation des indices filtrés
+        sequence = self.data.iloc[start_idx : start_idx + self.sequence_length]
 
-        """Charge une frame et sa valeur PPG"""
-        row = self.data.iloc[idx]
-        video_name = row["video_name"]
-        frame_name = f"{row['frame_name']:04d}.jpg"
-        frame_path = os.path.join(self.data_dir, video_name, frame_name)
+        video_folder = sequence.iloc[0]["video_name"]
+        frames = []
+        ppg_values = []
 
-        frame = Image.open(frame_path).convert("RGB")
-        composite_image = extract_cheeks(frame, idx, video_name)
-        composite_image = Image.fromarray(composite_image)
+        for _, row in sequence.iterrows():
+            frame_path = os.path.join(
+                self.data_dir, video_folder, f"{row['frame_name']:04d}.jpg"
+            )
 
-        if composite_image is None:
-            return None
+            if os.path.exists(frame_path):
+                image = Image.open(frame_path).convert("RGB")
+                if self.transform:
+                    image = self.transform(image)
+                frames.append(image)
+                ppg_values.append(row["ppg_value"])
+                video_name = row["video_name"]
 
-        # Normalisation
-        composite_image = self._normalize_image(composite_image)
-        if self.transform:
-            composite_image = self.transform(composite_image)
-
-        frame_tensor = torch.tensor(
-            np.array(composite_image), dtype=torch.float32
-        ).permute(
-            2, 0, 1
-        )  # (C, H, W)
-        ppg_value = torch.tensor(row["ppg_value"], dtype=torch.float32)  # (1,)
-
-        if self.video_is_invalid(
-            idx
-        ):  # Méthode qui vérifie une condition personnalisée pour cette vidéo
-            print(f"Vidéo {idx} ignorée.")
-            return None
-
-        if frame_tensor is None or ppg_value is None:
-            return None
-
-        return frame_tensor, ppg_value, video_name
-
-    def _normalize_image(self, image):
-        """Normalise l'image pour éviter les biais d'éclairage"""
-        image = np.array(image).astype(np.float32) / 255.0
-        mean = np.mean(image, axis=(0, 1))
-        std = np.std(image, axis=(0, 1)) + 1e-8  # Évite la division par zéro
-        normalized_image = (image - mean) / std
-        return Image.fromarray((normalized_image * 255).astype(np.uint8))
-
-    def video_is_invalid(self, idx):
-        # Critère pour ignorer une vidéo en particulier
-        invalid_videos = [
-            "ba17778fd8c441659d2c9d0142153c5d_1",
-            "ba17778fd8c441659d2c9d0142153c5d_2",
-        ]  # Liste d'IDs ou de noms de vidéos à ignorer
-        video_name = self.data.iloc[idx]["video_name"]
-
-        if video_name in invalid_videos:
-            return True
-        return False
+                if pd.isna(row["ppg_value"]):
+                    print(
+                        f"NaN détecté pour {row['video_name']} à la frame {row['frame_name']}"
+                    )
+        return torch.stack(frames), torch.tensor(ppg_values), video_name
