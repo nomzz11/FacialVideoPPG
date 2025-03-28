@@ -14,6 +14,7 @@ from torchvision.models.video import r3d_18
 
 
 # TODO: SPLIT FUNCTIONS IN DIFFERENT FOLDERS
+# TODO: ADD CLI OPTIONS TO CHOOSE VIDEO FOLDER AND BEST MODEL
 
 # Configuration
 BATCH_SIZE = 16  # Ajustez selon votre mémoire GPU
@@ -247,9 +248,6 @@ def detect_faces(video_path):
 
 
 def predict_ppg(model, frames, device="cuda"):
-    """
-    Prédit le signal PPG à partir des frames de visage en utilisant le modèle.
-    """
     try:
         model.to(device).eval()
 
@@ -264,7 +262,6 @@ def predict_ppg(model, frames, device="cuda"):
         frame_tensors = []
         for frame in frames:
             try:
-                # Vérifier que c'est un tableau numpy valide
                 if isinstance(frame, np.ndarray) and frame.size > 0:
                     tensor = transform(frame)
                     frame_tensors.append(tensor)
@@ -279,19 +276,16 @@ def predict_ppg(model, frames, device="cuda"):
         # Empilage des tenseurs
         face_tensors = torch.stack(frame_tensors)
 
-        # Gestion des groupes de 3 frames
+        # Ajustement pour garantir un multiple de 60
         num_frames = face_tensors.shape[0]
-        remainder = num_frames % 60
+        frames_to_drop = num_frames % 60
 
-        # Ajout de padding si nécessaire
-        if remainder != 0:
-            missing = 60 - remainder
-            padding = face_tensors[-1:].repeat(missing, 1, 1, 1)
-            face_tensors = torch.cat([face_tensors, padding], dim=0)
-
-        num_groups = face_tensors.shape[0] // 60
+        # Suppression des frames excédentaires
+        if frames_to_drop > 0:
+            face_tensors = face_tensors[:-frames_to_drop]
 
         # Restructuration pour le modèle 3D
+        num_groups = face_tensors.shape[0] // 60
         face_tensors = face_tensors.view(num_groups, 3, 60, 112, 112)
 
         # Traitement par lots pour économiser la mémoire
@@ -339,6 +333,21 @@ def estimate_heart_rate(ppg_signal, fs=30):
 
         # Extraction du BPM moyen
         bpm = m["bpm"]
+
+        import matplotlib.pyplot as plt
+
+        project_root = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+            )
+        )
+        save_path = project_root
+        plt.figure(figsize=(12, 6))
+        hp.plotter(wd, m)
+        plt.savefig(
+            save_path, dpi=300, bbox_inches="tight"
+        )  # Sauvegarde en haute qualité
+        plt.close()
 
         return bpm
 
@@ -439,10 +448,10 @@ if __name__ == "__main__":
     # Configuration des chemins
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     video_folder = os.path.join(
-        project_root, "data/test_dataset"
+        project_root, "data/test"
     )  # Dossier contenant les vidéos
     model_path = os.path.join(
-        project_root, "experiments/0020/best_model.pth"
+        project_root, "experiments/0021/best_model.pth"
     )  # Chemin du modèle pré-entraîné
     output_csv = os.path.join(project_root, "results.csv")  # Fichier de sortie CSV
 
