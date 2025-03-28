@@ -14,6 +14,7 @@ from torchvision.models.video import r3d_18
 
 
 # TODO: SPLIT FUNCTIONS IN DIFFERENT FOLDERS
+# TODO: ADD CLI OTPIONS TO CHOOSE FRAMES FOLDER AND BEST MODEL
 
 # Configuration
 BATCH_SIZE = 16  # Ajustez selon votre mémoire GPU
@@ -591,7 +592,7 @@ if __name__ == "__main__":
     # Configuration des chemins
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     frames_root_folder = os.path.join(
-        project_root, "data_mtcnn"
+        project_root, "data/test_dataloader"
     )  # Dossier contenant les sous-dossiers de frames
     model_path = os.path.join(
         project_root, "experiments/0020/best_model.pth"
